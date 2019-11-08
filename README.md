@@ -3,5 +3,5 @@
 ## Homeworks
 
 ### Homework 1.1
-Please download the data.zip from the course website. We have only code part here.
-Place it along with code folder.
+Please download the data.zip from the course website. We only have code part here.
+Extract it here : TDCV/Homework1.1/
