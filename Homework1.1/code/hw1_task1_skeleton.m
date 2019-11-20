@@ -160,7 +160,7 @@ hold off;
 % Leave the value of 1000 to retain reasonable computational time for debugging
 % In order to contruct the final SIFT model that will be used later, consider
 % increasing this value to get more SIFT points in your model
-num_samples=1000;
+num_samples=1000; % Using 10000 right now
 size_total_sift_points=num_samples*num_files;
 
 % Visualise cameras and model SIFT keypoints
