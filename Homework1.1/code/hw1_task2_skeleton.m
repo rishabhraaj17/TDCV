@@ -18,6 +18,18 @@ load('sift_model.mat');
 
 
 % TODO: setup camera intrinsic parameters using cameraParameters()
+% A - The camera instrinsic matrix
+fx = 2960.37845;
+fy = 2960.37845;
+cx = 1841.68855;
+cy = 1235.23369;
+A = [fx, 0, 0; 0, fy, 0; cx, cy, 1];
+
+% Size of the image
+% Since all the images have same size, we can calculate it outside the loop
+
+image_size = [2456, 3680];
+camera_params = cameraParameters("IntrinsicMatrix",A, "ImageSize",image_size);
 
 %% Get all filenames in images folder
 
@@ -40,25 +52,28 @@ sift_matches=cell(num_files,1);
 % When taking higher value, match is only recognized if similarity is very high
 threshold_ubcmatch = 1.5; 
 
-for i=1:num_files
-    fprintf('Calculating and matching sift features for image: %d \n', i)
-    
-%     TODO: Prepare the image (img) for vl_sift() function
-    [keypoints{i}, descriptors{i}] = vl_sift(img);
-%     Match features between SIFT model and SIFT features from new image
-    sift_matches{i} = vl_ubcmatch(descriptors{i}, model.descriptors, threshold_ubcmatch); 
-end
+% for i=1:num_files
+%     fprintf('Calculating and matching sift features for image: %d \n', i)
+%     
+% %     TODO: Prepare the image (img) for vl_sift() function
+% %   Covert images to grayscale as required by vl_sift()
+%     gray_img = rgb2gray(imread(Filenames{i}));
+% %   Convert to single precision matrix
+%     img = single(gray_img);
+%     [keypoints{i}, descriptors{i}] = vl_sift(img);
+% %     Match features between SIFT model and SIFT features from new image
+%     sift_matches{i} = vl_ubcmatch(descriptors{i}, model.descriptors, threshold_ubcmatch); 
+% end
 
 
 % Save sift features, descriptors and matches and load them when you rerun the code to save time
-save('sift_matches.mat', 'sift_matches');
-save('detection_keypoints.mat', 'keypoints')
-save('detection_descriptors.mat', 'descriptors')
+% save('sift_matches.mat', 'sift_matches');
+% save('detection_keypoints.mat', 'keypoints')
+% save('detection_descriptors.mat', 'descriptors')
 
-% load('sift_matches.mat')
-% load('detection_keypoints.mat')
-% load('detection_descriptors.mat')
-
+load('sift_matches.mat')
+load('detection_keypoints.mat')
+load('detection_descriptors.mat')
 
 %% PnP and RANSAC 
 % Implement the RANSAC algorithm featuring also the following arguments:

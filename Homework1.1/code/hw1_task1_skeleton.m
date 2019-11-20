@@ -27,12 +27,12 @@ title('Vertices numbering')
 % will result in NaN values in the output array
 % Don't forget to filter NaNs later
 num_points = 8;
-labeled_points = mark_image(path_img_dir, num_points);
+% labeled_points = mark_image(path_img_dir, num_points);
 
 
 % Save labeled points and load them when you rerun the code to save time
-save('labeled_points.mat', 'labeled_points')
-% load('labeled_points.mat')
+% save('labeled_points.mat', 'labeled_points')
+load('labeled_points.mat')
 
 %% Get all filenames in images folder
 
@@ -64,6 +64,18 @@ end
 cam_in_world_orientations = zeros(3,3,num_files);
 cam_in_world_locations = zeros(1,3,num_files);
 
+% A - The camera instrinsic matrix
+fx = 2960.37845;
+fy = 2960.37845;
+cx = 1841.68855;
+cy = 1235.23369;
+A = [fx, 0, 0; 0, fy, 0; cx, cy, 1];
+
+% Size of the image
+% Since all the images have same size, we can calculate it outside the loop
+
+image_size = size(imread(Filenames{1}), 1:2);
+
 % iterate over the images
 for i=1:num_files
     
@@ -72,13 +84,21 @@ for i=1:num_files
 %   TODO: Estimate camera pose for every image
 %     In order to estimate pose of the camera using the function bellow you need to:
 %   - Prepare image_points and corresponding world_points
+%   Removing NaN from the labeled_points using rmmissing, which will return
+%   labeled points as well as one-hot encoded unlabeled_corners vector
+    [image_points, unlabeled_corners] = rmmissing(labeled_points(:,:,i));
+%   Get world points only for the corners visible in images,non NaN corners
+    world_points = vertices(~unlabeled_corners, :);
 %   - Setup camera_params using cameraParameters() function
+    %A = [fx, 0, 0; 0, fy, 0; cx, cy, 1];
+    %image_size = size(imread(Filenames{i}), 1:2);
+    camera_params = cameraParameters("IntrinsicMatrix",A, "ImageSize",image_size);
 %   - Define max_reproj_err - take a look at the documentation and
+    max_reproj_err = 6;
 %   experiment with different values of this parameter 
     [cam_in_world_orientations(:,:,i),cam_in_world_locations(:,:,i)] = estimateWorldCameraPose(image_points, world_points, camera_params, 'MaxReprojectionError', max_reproj_err);
     
 end
-
 %% Visualize computed camera poses
 
 % Edges of the object bounding box
@@ -96,20 +116,24 @@ visualise_cameras(vertices, edges, cam_in_world_orientations, cam_in_world_locat
 keypoints = cell(num_files,1); 
 descriptors = cell(num_files,1); 
 
-for i=1:length(Filenames)
-    fprintf('Calculating sift features for image: %d \n', i)
-
-%    TODO: Prepare the image (img) for vl_sift() function
-    [keypoints{i}, descriptors{i}] = vl_sift(img) ;
-end
+% for i=1:length(Filenames)
+%     fprintf('Calculating sift features for image: %d \n', i)
+% 
+% %    TODO: Prepare the image (img) for vl_sift() function
+% %   Covert images to grayscale as required by vl_sift()
+%     gray_img = rgb2gray(imread(Filenames{i}));
+% %   Convert to single precision matrix
+%     img = single(gray_img);
+%     [keypoints{i}, descriptors{i}] = vl_sift(img) ;
+% end
 
 % When you rerun the code, you can load sift features and descriptors to
 
 % Save sift features and descriptors and load them when you rerun the code to save time
-save('sift_descriptors.mat', 'descriptors')
-save('sift_keypoints.mat', 'keypoints')
-% load('sift_descriptors.mat');
-% load('sift_keypoints.mat');
+%save('sift_descriptors.mat', 'descriptors')
+%save('sift_keypoints.mat', 'keypoints')
+load('sift_descriptors.mat');
+load('sift_keypoints.mat');
 
 
 % Visualisation of sift features for the first image
@@ -119,7 +143,6 @@ imshow(char(Filenames(1)), 'InitialMagnification', 'fit');
 vl_plotframe(keypoints{1}(:,:), 'linewidth',2);
 title('SIFT features')
 hold off;
-
 
 
 %% Build SIFT model
@@ -147,9 +170,19 @@ fig = visualise_cameras(vertices, edges, cam_in_world_orientations, cam_in_world
 hold on
 
 % Place model's SIFT keypoints coordinates and descriptors here
-model.coord3d = [];
-model.descriptors = [];
+model.coord3d = zeros(size_total_sift_points, 3);
+model.descriptors = zeros(128, size_total_sift_points, 'uint8');
 
+first_vertex_idx = faces(:, 1) + 1; % get the list of first vertex idx for all faces, +1 to get into matlab indexing
+second_vertex_idx = faces(:, 2) + 1; % get the list of second vertex idx for all faces, +1 to get into matlab indexing
+third_vertex_idx = faces(:, 3) + 1; % get the list of third vertex idx for all faces, +1 to get into matlab indexing
+% Vertices list for TriangleRayIntersection()
+first_vertices = vertices(first_vertex_idx, :);
+second_vertices = vertices(second_vertex_idx, :);
+third_vertices = vertices(third_vertex_idx, :);
+
+point_index = 0;
+point = ones(3,1); % point corresponds to m in the equation r(m) -- point = [x, y, 1]'
 
 for i=1:num_files
     
@@ -158,16 +191,43 @@ for i=1:num_files
     sel = perm(1:num_samples);
     
 %    Section to be deleted starts here
-    P = cam_intrinsics.IntrinsicMatrix.'*[cam_in_world_orientations(:,:,i) -cam_in_world_orientations(:,:,i)*cam_in_world_locations(:,:,i).'];
+    P = camera_params.IntrinsicMatrix.'*[cam_in_world_orientations(:,:,i) -cam_in_world_orientations(:,:,i)*cam_in_world_locations(:,:,i).'];
     Q = P(:,1:3);
     q = P(:,4);
     orig = -inv(Q)*q; % this corresponds to C
 %    Section to be deleted ends here
-
+    
     for j=1:num_samples
         
     % TODO: Perform intersection between a ray and the object
     % You can use TriangleRayIntersection to find intersections
+    
+    % for all image files and corresponding keypoints cell array get the
+    % cell array. Then get the 2D cordinate of the randomly chosen point
+    point(1:2) = keypoints{i}(1:2, sel(j));
+    % get the ray vector (direction vector)
+    r = orig + Q\point; % inv(Q)*m -- Q\m
+    r = r/norm(r); % sparse comparitevely
+    
+    % Gives dense reconstruction
+    %r = Q\point;
+    %r = r/norm(r);
+    
+    % call to TriangleRayIntersection()
+    [intersect_arr, distance_ray_origin_intersect_pt, u, v, x_coor] = TriangleRayIntersection(orig', r', first_vertices, ...
+        second_vertices, third_vertices, 'planeType', 'one sided'); % ignores occluded faces
+    if any(size(find(intersect_arr)) > 1)
+        throw('Double Intersection!')
+    end
+    
+    if any(intersect_arr)
+        point_index = point_index + 1;
+        intersection_idx = find(intersect_arr);
+        world_point_idx = x_coor(intersection_idx, :);
+        model.coord3d(point_index, :) = world_point_idx;
+        model.descriptors(:, point_index) = descriptors{i}(:, sel(j));
+    end
+    
     % Pay attention at the visible faces from the given camera position
     
     end  
@@ -178,7 +238,6 @@ hold off
 xlabel('x');
 ylabel('y');
 zlabel('z');
-
 % Save your sift model for the future tasks
 save('sift_model.mat', 'model');
 
