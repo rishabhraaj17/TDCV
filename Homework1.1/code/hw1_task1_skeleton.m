@@ -90,8 +90,6 @@ for i=1:num_files
 %   Get world points only for the corners visible in images,non NaN corners
     world_points = vertices(~unlabeled_corners, :);
 %   - Setup camera_params using cameraParameters() function
-    %A = [fx, 0, 0; 0, fy, 0; cx, cy, 1];
-    %image_size = size(imread(Filenames{i}), 1:2);
     camera_params = cameraParameters("IntrinsicMatrix",A, "ImageSize",image_size);
 %   - Define max_reproj_err - take a look at the documentation and
     max_reproj_err = 6;
