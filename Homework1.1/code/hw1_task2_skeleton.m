@@ -25,9 +25,6 @@ cx = 1841.68855;
 cy = 1235.23369;
 A = [fx, 0, 0; 0, fy, 0; cx, cy, 1];
 
-% Size of the image
-% Since all the images have same size, we can calculate it outside the loop
-
 image_size = [2456, 3680];
 camera_params = cameraParameters("IntrinsicMatrix",A, "ImageSize",image_size);
 
@@ -171,17 +168,6 @@ for i = 1:num_files
         'MaxReprojectionError', 1000);
     
 end
-
-% Result Improvement:
-% TODO-
-% 1. Is dense way theoratically sound? - Not clear if the method handles the
-% shift!
-% 2. Better and precise corners selection
-% 3. More ransac iterations. 9 wrong for 50 itr
-% 4. Play with reprojection error - 1000 default, try reducing
-% 5. Maybe as last resort numIter and Confidence too
-
-
 %% Visualize inliers and the bounding box
 
 % You can use the visualizations below or create your own one

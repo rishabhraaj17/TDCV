@@ -84,13 +84,17 @@ for i=1:num_files
 %   TODO: Estimate camera pose for every image
 %     In order to estimate pose of the camera using the function bellow you need to:
 %   - Prepare image_points and corresponding world_points
+
 %   Removing NaN from the labeled_points using rmmissing, which will return
 %   labeled points as well as one-hot encoded unlabeled_corners vector
     [image_points, unlabeled_corners] = rmmissing(labeled_points(:,:,i));
+    
 %   Get world points only for the corners visible in images,non NaN corners
     world_points = vertices(~unlabeled_corners, :);
+    
 %   - Setup camera_params using cameraParameters() function
     camera_params = cameraParameters("IntrinsicMatrix",A, "ImageSize",image_size);
+    
 %   - Define max_reproj_err - take a look at the documentation and
     max_reproj_err = 6;
 %   experiment with different values of this parameter 
@@ -174,6 +178,7 @@ model.descriptors = zeros(128, size_total_sift_points, 'uint8');
 first_vertex_idx = faces(:, 1) + 1; % get the list of first vertex idx for all faces, +1 to get into matlab indexing
 second_vertex_idx = faces(:, 2) + 1; % get the list of second vertex idx for all faces, +1 to get into matlab indexing
 third_vertex_idx = faces(:, 3) + 1; % get the list of third vertex idx for all faces, +1 to get into matlab indexing
+
 % Vertices list for TriangleRayIntersection()
 first_vertices = vertices(first_vertex_idx, :);
 second_vertices = vertices(second_vertex_idx, :);
@@ -203,6 +208,7 @@ for i=1:num_files
     % for all image files and corresponding keypoints cell array get the
     % cell array. Then get the 2D cordinate of the randomly chosen point
     point(1:2) = keypoints{i}(1:2, sel(j));
+    
     % get the ray vector (direction vector)
     r = orig + Q\point; % inv(Q)*m -- Q\m
     r = r/norm(r); % sparse comparitevely
