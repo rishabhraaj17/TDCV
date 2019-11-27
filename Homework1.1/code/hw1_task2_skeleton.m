@@ -95,12 +95,14 @@ cam_in_world_orientations = zeros(3,3,num_files);
 cam_in_world_locations = zeros(1,3,num_files);
 best_inliers_set = cell(num_files, 1);
 
-ransac_iterations = 50; 
+ransac_iterations = 100; 
 threshold_ransac = 4;
+
+random_points_count = 4;
+max_reproj_err = 1000;
 
 for i = 1:num_files
     fprintf('Running PnP+RANSAC for image: %d \n', i)
-    random_points_count = 4;
     % Get all the keypoint matches between Image and Model 
     % Give me all the 2D (x,y) of center of frame for the matched keypoints
     sift_matches_image = keypoints{i}(1:2, sift_matches{i}(1, :));
@@ -130,7 +132,7 @@ for i = 1:num_files
         world_x_y = model.coord3d(index_keypoints_model, :);
         % Estimate the pose using PnP
         try
-            [cam_in_world_orientations_local, cam_in_world_locations_local] = estimateWorldCameraPose(image_x_y', world_x_y, camera_params, 'MaxReprojectionError', 1000);
+            [cam_in_world_orientations_local, cam_in_world_locations_local] = estimateWorldCameraPose(image_x_y', world_x_y, camera_params, 'MaxReprojectionError', max_reproj_err);
             % Sometimes this configurations results in no inliers
         catch ME
             continue
@@ -150,7 +152,7 @@ for i = 1:num_files
         image_cordinates = camera_cordinates(:, 1:2) ./ camera_cordinates_z;
         
         % Get the reprojection error
-        reprojection_error = sift_matches_image - image_cordinates'; % use pdist2, already tried better than vecnorm
+        reprojection_error = sift_matches_image - image_cordinates'; % use pdist2, already tried equal than norm
         direction_vector = vecnorm(reprojection_error, 2, 1);
         
         % Get inliers indexes
@@ -163,9 +165,9 @@ for i = 1:num_files
         end
     end
     
-    % Restimate the pose
+    % Restimate the pose to store best pose with best inlier set
     [cam_in_world_orientations(:,:,i),cam_in_world_locations(:,:,i)] = estimateWorldCameraPose(sift_matches_image(:, best_inliers_set{i})', sift_matches_model(best_inliers_set{i}, 1:3), camera_params, ...
-        'MaxReprojectionError', 1000);
+        'MaxReprojectionError', max_reproj_err); % images were from 10000
     
 end
 %% Visualize inliers and the bounding box

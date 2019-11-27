@@ -17,6 +17,11 @@ object_path = '../data/teabox.ply';
 % box. Using coordinates of teabox model, vertex numbering is visualized in
 % image vertices.png
 
+% 8 has (x,y,z) = (0,0,0)
+% z is in the vertical direction 8 -> 4
+% x is in horizontal outward 8 -> 7
+% y is in horizontal right 8 -> 5
+
 imshow('vertices.png')
 title('Vertices numbering')
 
@@ -96,7 +101,7 @@ for i=1:num_files
     camera_params = cameraParameters("IntrinsicMatrix",A, "ImageSize",image_size);
     
 %   - Define max_reproj_err - take a look at the documentation and
-    max_reproj_err = 6;
+    max_reproj_err = 3;
 %   experiment with different values of this parameter 
     [cam_in_world_orientations(:,:,i),cam_in_world_locations(:,:,i)] = estimateWorldCameraPose(image_points, world_points, camera_params, 'MaxReprojectionError', max_reproj_err);
     
@@ -164,7 +169,7 @@ hold off;
 % Leave the value of 1000 to retain reasonable computational time for debugging
 % In order to contruct the final SIFT model that will be used later, consider
 % increasing this value to get more SIFT points in your model
-num_samples=1000; % Using 10000 right now
+num_samples=12000;
 size_total_sift_points=num_samples*num_files;
 
 % Visualise cameras and model SIFT keypoints
@@ -210,18 +215,18 @@ for i=1:num_files
     point(1:2) = keypoints{i}(1:2, sel(j));
     
     % get the ray vector (direction vector)
-    r = orig + Q\point; % inv(Q)*m -- Q\m
-    r = r/norm(r); % sparse comparitevely
+    % r = orig + Q\point; % inv(Q)*m -- Q\m
+    % r = r/norm(r); % sparse comparitevely
     
     % Gives dense reconstruction
-    %r = Q\point;
-    %r = r/norm(r);
+    r = Q\point;
+    r = r/norm(r);
     
     % call to TriangleRayIntersection()
     [intersect_arr, distance_ray_origin_intersect_pt, u, v, x_coor] = TriangleRayIntersection(orig', r', first_vertices, ...
         second_vertices, third_vertices, 'planeType', 'one sided'); % ignores occluded faces
     if any(size(find(intersect_arr)) > 1)
-        throw('Double Intersection!')
+        throw MException("Double Intersection!")
     end
     
     if any(intersect_arr)
