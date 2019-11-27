@@ -101,7 +101,7 @@ for i=1:num_files
     camera_params = cameraParameters("IntrinsicMatrix",A, "ImageSize",image_size);
     
 %   - Define max_reproj_err - take a look at the documentation and
-    max_reproj_err = 3;
+    max_reproj_err = 3.5;
 %   experiment with different values of this parameter 
     [cam_in_world_orientations(:,:,i),cam_in_world_locations(:,:,i)] = estimateWorldCameraPose(image_points, world_points, camera_params, 'MaxReprojectionError', max_reproj_err);
     
@@ -123,24 +123,24 @@ visualise_cameras(vertices, edges, cam_in_world_orientations, cam_in_world_locat
 keypoints = cell(num_files,1); 
 descriptors = cell(num_files,1); 
 
-% for i=1:length(Filenames)
-%     fprintf('Calculating sift features for image: %d \n', i)
-% 
-% %    TODO: Prepare the image (img) for vl_sift() function
-% %   Covert images to grayscale as required by vl_sift()
-%     gray_img = rgb2gray(imread(Filenames{i}));
-% %   Convert to single precision matrix
-%     img = single(gray_img);
-%     [keypoints{i}, descriptors{i}] = vl_sift(img) ;
-% end
+for i=1:length(Filenames)
+    fprintf('Calculating sift features for image: %d \n', i)
+
+%    TODO: Prepare the image (img) for vl_sift() function
+%   Covert images to grayscale as required by vl_sift()
+    gray_img = rgb2gray(imread(Filenames{i}));
+%   Convert to single precision matrix
+    img = single(gray_img);
+    [keypoints{i}, descriptors{i}] = vl_sift(img) ;
+end
 
 % When you rerun the code, you can load sift features and descriptors to
-
+% 
 % Save sift features and descriptors and load them when you rerun the code to save time
-%save('sift_descriptors.mat', 'descriptors')
-%save('sift_keypoints.mat', 'keypoints')
-load('sift_descriptors.mat');
-load('sift_keypoints.mat');
+save('sift_descriptors.mat', 'descriptors')
+save('sift_keypoints.mat', 'keypoints')
+% load('sift_descriptors.mat');
+% load('sift_keypoints.mat');
 
 
 % Visualisation of sift features for the first image
