@@ -152,7 +152,7 @@ for i = 1:num_files
         image_cordinates = camera_cordinates(:, 1:2) ./ camera_cordinates_z;
         
         % Get the reprojection error
-        reprojection_error = sift_matches_image - image_cordinates'; % use pdist2, already tried equal than norm
+        reprojection_error = sift_matches_image - image_cordinates'; % alternative pdist2
         direction_vector = vecnorm(reprojection_error, 2, 1);
         
         % Get inliers indexes
