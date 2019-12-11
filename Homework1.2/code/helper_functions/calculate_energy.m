@@ -13,8 +13,8 @@ MAD = median(abs(e)); % TODO: check if abs(e) is necessary
 sigma = 1.48257968*MAD; % compute scale
 c = 4.685;
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Something wrong in functions maybe need a
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%% vector not just a scalar.. will fix later
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Fixed %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Fixed %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 W = TurkeyBiSquareWeights(e/sigma, c);
 % Slide 47
 E = sum(TurkeyBiSquareMEstimator(e, c));
