@@ -1,0 +1,10 @@
+#ATE
+python evaluate_ate.py gt_valid.txt predicted_validation_trajectory_sameformat.txt --save gt_pred_comparision_ate.txt --save_associations gt_pred_associations_ate.txt --plot plot_gt_pred_comparision_ate.png
+0.012133
+
+
+
+# RPE
+python evaluate_rpe.py gt_valid.txt predicted_validation_trajectory_sameformat.txt --save gt_predicted_comparision_rpe.txt
+0.44008487072161934
+

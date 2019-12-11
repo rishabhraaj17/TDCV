@@ -30,7 +30,7 @@ if radian == true
     
 
     quaternion = [cos(w_norm/2), sin(w_norm/2)*w_a'];
-else
+else % We have to work in Radians only; Ignore this part. TODO: Remove.
     % disp("Angle in Degree");
     theta = acosd(0.5*(trace(R) - 1));
 

@@ -388,3 +388,58 @@ end
 
 % TODO: Estimate ATE and RPE for validation and test sequences
 
+% Jacobian already implemented and in use!
+
+% file_validation = fopen('predicted_validation_trajectory.txt', 'w');
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%% !! %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% In gt_valid.txt -- timestamps are numbers just from 6 to 30
+% and quaternions are written as -quaternion (negative), which is same
+file_validation = fopen('predicted_validation_trajectory_sameformat.txt', 'w');
+% Only validation as cam_in_world_orientations and cam_in_world_locations
+% are for validation in this file.
+%file_test = fopen('predicted_test_trajectory_sameformat.txt', 'w');
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% file_test = fopen('predicted_test_trajectory.txt', 'w');
+
+% This will match the file format of gt_valid.txt
+num_iteration = 6:30;
+
+for img = 1:length(num_iteration)
+    % Timestamp
+    timestamp = num_iteration(img);
+    % Rotation in Quaternion
+    q = -AaQuaternion(cam_in_world_orientations(:, :, img));
+    qx = q(1);
+    qy = q(2);
+    qz = q(3);
+    qw = q(4);
+    % Translation
+    tx = cam_in_world_locations(1, 1, img);
+    ty = cam_in_world_locations(1, 2, img);
+    tz = cam_in_world_locations(1, 3, img);
+    % Write to file
+    fprintf(file_validation, '%d %f %f %f %f %f %f %f\r\n', timestamp, tx, ty, tz, qx, qy, qz, qw);
+end
+
+% format longG;
+% 
+% for img = 1:num_files
+%     % Timestamp
+%     time_now = datetime('now','TimeZone','Europe/Berlin');
+%     timestamp = posixtime(time_now);
+%     % Rotation in Quaternion
+%     q = AaQuaternion(cam_in_world_orientations(:, :, img));
+%     qx = q(1);
+%     qy = q(2);
+%     qz = q(3);
+%     qw = q(4);
+%     % Translation
+%     tx = cam_in_world_locations(1, 1, img);
+%     ty = cam_in_world_locations(1, 2, img);
+%     tz = cam_in_world_locations(1, 3, img);
+%     % Write to file
+%     fprintf(file_validation, '%f %f %f %f %f %f %f %f\r\n', timestamp, tx, ty, tz, qx, qy, qz, qw);
+% end
+
+fclose(file_validation);
+%fclose(file_test);
