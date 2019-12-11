@@ -9,7 +9,10 @@ P = [R ; t]*camera_params.IntrinsicMatrix;
 % Convert to Homogeneous Cordinate System
 M_homogeneous = [M ones(num_points, 1)];
 % Projecting 3D to 2D
-image_points = M_homogeneous*P;
+image_points = M_homogeneous*P; % Correct way coz we need W component
+
+% % Projecting 3D points M to image -- world_points is M
+% image_points = worldToImage(camera_params, R, t, M);
 
 % SO(3) to so(3) 
 r = rotationMatrixToVector(R);
