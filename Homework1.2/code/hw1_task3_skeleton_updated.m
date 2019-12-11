@@ -198,6 +198,7 @@ hold off;
 % TODO: Implement IRLS method for the reprojection error optimisation
 % You can start with these parameters to debug your solution 
 % but you should also experiment with their different values
+%%%%%%%%%%%%% Try different values of threshold_irls and N and Try threshold 6+ %%%%%%%%%%%%%%%
 threshold_irls = 0.000001;%0.005; % update threshold for IRLS
 N = 200; % number of iterations -- TODO: increase it 100 or 200
 threshold_ubcmatch = 6;%2.0;%4;%5;%6; % matching threshold for vl_ubcmatch() %TODO: Try 7
@@ -304,7 +305,8 @@ for i = 1:(num_files - 1) % -1 necessary for i, i+1 behaviour
     t = 0;
     lamda = 0.001;
     u = threshold_irls + 1;
-    % Jacobian -- TODO: compare with internal symbolic jacobian!!
+    % Jacobian -- TODO: %%%%%%%%%%%%%%%%%%% Task: compare with internal
+    % symbolic jacobian!!%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     jacobian_m = jacobian_matrix(rotationMatrix, translationVector, M, camera_params);
     
     while (t < N && u > threshold_irls)
