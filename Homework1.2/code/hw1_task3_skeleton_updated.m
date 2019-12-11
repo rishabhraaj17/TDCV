@@ -200,8 +200,8 @@ hold off;
 % but you should also experiment with their different values
 %%%%%%%%%%%%% Try different values of threshold_irls and N and Try threshold 6+ %%%%%%%%%%%%%%%
 threshold_irls = 0.000001;%0.005; % update threshold for IRLS
-N = 200; % number of iterations -- TODO: increase it 100 or 200
-threshold_ubcmatch = 6;%2.0;%4;%5;%6; % matching threshold for vl_ubcmatch() %TODO: Try 7
+N = 300; % number of iterations -- TODO: increase it 100 or 200
+threshold_ubcmatch = 7;%2.0;%4;%5;%6; % matching threshold for vl_ubcmatch() %TODO: Try 7
 % last time we used 2.0. Very much strict this threshold of 6 - works very
 % good
 
@@ -347,6 +347,7 @@ hold on;
 visualise_trajectory(vertices, edges, gt_valid.orientations, gt_valid.locations, 'Color', 'g');
 hold off;
 title('\color{green}Ground Truth trajectory \color{blue}Predicted trajectory')
+saveas(gcf, 'validation_trajectory.png');
 
 %% Visualize bounding boxes
 
@@ -370,6 +371,8 @@ for i=1:num_files
     saveas(gcf, filename)
 end
 
+save('cam_in_world_orientations.mat', 'cam_in_world_orientations');
+save('cam_in_world_locations.mat', 'cam_in_world_locations');
 %% Bonus part
 
 % Save estimated camera poses for the validation sequence using Vision TUM trajectory file
