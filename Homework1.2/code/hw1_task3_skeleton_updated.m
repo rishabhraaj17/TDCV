@@ -9,7 +9,7 @@ path_img_dir = '../data/tracking/validation/img';
 % path to object ply file
 object_path = '../data/teabox.ply';
 % path to results folder
-results_path = '../data/tracking/valid/results_proofrun';
+results_path = '../data/tracking/valid/results';
 
 % Read the object's geometry 
 % Here vertices correspond to object's corners and faces are triangles
@@ -346,8 +346,8 @@ hold on;
 % Ground Truth trajectory
 visualise_trajectory(vertices, edges, gt_valid.orientations, gt_valid.locations, 'Color', 'g');
 hold off;
-title('\color{green}Proof Run Ground Truth trajectory \color{blue}Predicted trajectory')
-saveas(gcf, 'proofrun_validation_trajectory.png');
+title('\color{green}Ground Truth trajectory \color{blue}Predicted trajectory')
+saveas(gcf, 'validation_trajectory.png');
 
 %% Visualize bounding boxes
 
@@ -371,8 +371,8 @@ for i=1:num_files
     saveas(gcf, filename)
 end
 
-save('cam_in_world_orientations_proofrun.mat', 'cam_in_world_orientations');
-save('cam_in_world_locations_proofrun.mat', 'cam_in_world_locations');
+save('cam_in_world_orientations.mat', 'cam_in_world_orientations');
+save('cam_in_world_locations.mat', 'cam_in_world_locations');
 %% Bonus part
 
 % Save estimated camera poses for the validation sequence using Vision TUM trajectory file
@@ -397,7 +397,7 @@ save('cam_in_world_locations_proofrun.mat', 'cam_in_world_locations');
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%% !! %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % In gt_valid.txt -- timestamps are numbers just from 6 to 30
 % and quaternions are written as -quaternion (negative), which is same
-file_validation = fopen('proofrun_predicted_validation_trajectory_sameformat.txt', 'w');
+file_validation = fopen('predicted_validation_trajectory_sameformat.txt', 'w');
 % Only validation as cam_in_world_orientations and cam_in_world_locations
 % are for validation in this file.
 %file_test = fopen('predicted_test_trajectory_sameformat.txt', 'w');

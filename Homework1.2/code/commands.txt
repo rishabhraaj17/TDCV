@@ -1,0 +1,19 @@
+#ATE
+python evaluate_ate.py gt_valid.txt predicted_validation_trajectory_sameformat.txt --save gt_pred_comparision_ate.txt --save_associations gt_pred_associations_ate.txt --plot plot_gt_pred_comparision_ate.png
+0.012133
+
+# Threshold 7; 300 iteration
+python evaluate_ate.py gt_valid.txt predicted_validation_trajectory_sameformat_theshold7.txt --save gt_pred_comparision_ate_new.txt --save_associations gt_pred_associations_ate_new.txt --plot plot_gt_pred_comparision_ate_new.png
+0.003043 ---> less than 1cm
+
+
+
+# RPE
+python evaluate_rpe.py gt_valid.txt predicted_validation_trajectory_sameformat.txt --save gt_predicted_comparision_rpe.txt
+0.44008487072161934
+
+
+# Threshold 7; 300 iteration
+python evaluate_rpe.py gt_valid.txt predicted_validation_trajectory_sameformat_theshold7.txt --save gt_predicted_comparision_rpe_new.txt
+0.43711100137569076
+

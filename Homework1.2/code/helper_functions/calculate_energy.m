@@ -6,7 +6,6 @@ reprojection_err = image_points - m';
 % converting into 2N by 1 vector --- from sheet e = [e 1 e 2 . . . e 2N ] T
 e = [reprojection_err(:, 1)';reprojection_err(:, 2)'];
 %disp(size(e));
-% e is residual --
 e = e(:);
 %disp(size(e));
 % Homework sheet
