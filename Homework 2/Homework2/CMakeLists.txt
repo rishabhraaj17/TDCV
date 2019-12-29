@@ -11,6 +11,18 @@ include_directories(${OPENCV_INCLUDE_DIR})
 
 set(CMAKE_CXX_STANDARD 14)
 
+include_directories(${PROJECT_SOURCE_DIR}/include)
+
+set(HEADER_FILES
+        include/HOGDescriptor.h)
+
+set(SOURCE_FILES
+        src/task1/HOGDescriptor.cpp)
+
+
 # can rename executables further
 add_executable(main src/main.cpp)
 target_link_libraries(main ${OpenCV_LIBRARIES})
+
+add_executable(HogDescriptor src/task1/task1.cpp ${HEADER_FILES} ${SOURCE_FILES})
+target_link_libraries(HogDescriptor ${OpenCV_LIBRARIES})
