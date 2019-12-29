@@ -60,7 +60,11 @@ void testForest(){
 
 
 int main(){
+    //cout << "OpenCV version : " << CV_VERSION << endl;
     testDTrees();
     testForest();
+    RandomForest randomForest;
+    //std::vector<std::pair<int, cv::Mat>> trainDataset = randomForest.loadTrainDataset();
+    std::vector<std::pair<int, cv::Mat>> testDataset = randomForest.loadTestDataset();
     return 0;
 }
