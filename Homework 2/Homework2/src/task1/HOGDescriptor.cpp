@@ -180,7 +180,11 @@ void HOGDescriptor::detectHOGDescriptor(cv::Mat &im, std::vector<float> &feat, c
    // vector of found locations returned by compute
    std::vector<cv::Point> foundLocations;
    // resize the image
-   cv::resize(im, img_resized, sz, 0, 0, cv::INTER_AREA);
+   // Way 1 : looks like pdf
+   //cv::resize(im, img_resized, sz, 0, 0, cv::INTER_AREA);
+   // Way 2 : Looks diiferent than pdf sample. TODO: decide
+   cv::Size w_size(128, 128);
+   img_resized = resizeToBoundingBox(im, w_size);
    // convert to grayscale
    cv::cvtColor(img_resized, img_gray, cv::COLOR_BGR2GRAY);
    // compute the descriptors
@@ -196,3 +200,20 @@ cv::HOGDescriptor & HOGDescriptor::getHog_detector() {
     return hog_detector;
 }
 
+cv::Mat HOGDescriptor::resizeToBoundingBox(cv::Mat &inputImage, cv::Size &winSize)
+{
+    cv::Mat resizedInputImage;
+    if (inputImage.rows < winSize.height || inputImage.cols < winSize.width)
+    {
+        float scaleFactor = fmax((winSize.height * 1.0f) / inputImage.rows, (winSize.width * 1.0f) / inputImage.cols);
+        cv::resize(inputImage, resizedInputImage, cv::Size(0, 0), scaleFactor, scaleFactor, cv::INTER_LINEAR);
+    }
+    else
+    {
+        resizedInputImage = inputImage;
+    }
+
+    cv::Rect r = cv::Rect((resizedInputImage.cols - winSize.width) / 2, (resizedInputImage.rows - winSize.height) / 2,
+                  winSize.width, winSize.height);
+    return resizedInputImage(r);
+}

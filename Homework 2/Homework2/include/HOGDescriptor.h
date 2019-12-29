@@ -113,7 +113,7 @@ private:
     cv::Size cellSize;
     int nbins;
 
-    // these could be const
+    // these could be const??
     int derivAperture;
     double winSigma;
     int histogramNormType;
@@ -122,7 +122,6 @@ private:
     int nlevels;
     bool signedGradient;
 
-    //check usage
     cv::Mat img_gray;
     cv::Mat img_resized;
 
@@ -132,6 +131,8 @@ public:
 
 private:
     bool is_init;
+
+    cv::Mat resizeToBoundingBox(cv::Mat &inputImage, cv::Size &winSize);
 };
 
 #endif //RF_HOGDESCRIPTOR_H
