@@ -9,11 +9,23 @@ void HOGDescriptor::initDetector() {
     //Fill code here
 
     // if change of params init
-    cv::Size winSize(128, 128);
-    cv::HOGDescriptor hogDescriptor;
+    cv::Size size(128, 128);
+    cv::Size stride(8, 8);
+    cv::Size cell(8, 8);
+    int bins(9);
+    int aperture(1);
+    double sigma(-1);
+    int normType(cv::HOGDescriptor::L2Hys);
+    double l2HysThreshold(0.2);
+    bool gcorrection(true);
+    //! Maximum number of detection window increases. Default value is 64
+    int n_levels(cv::HOGDescriptor::DEFAULT_NLEVELS);
+    bool gradient(false);
+    cv::HOGDescriptor hogDescriptor(size, blockSize, stride, cell, bins, aperture, sigma, normType,
+                                    l2HysThreshold, gcorrection, n_levels, gradient);
 
+    hog_detector = hogDescriptor;
     is_init = true;
-
 }
 
 
@@ -165,13 +177,13 @@ void HOGDescriptor::detectHOGDescriptor(cv::Mat &im, std::vector<float> &feat, c
     * resize your image
     * use the built in function "compute" to get the HOG descriptors
     */
-   // pad image?
+   // vector of found locations returned by compute
    std::vector<cv::Point> foundLocations;
-   hog_detector.winSize = cv::Size(128, 128);
-   // cv::Mat img_resized = resizeToBoundingBox(im, this->winSize);
+   // resize the image
    cv::resize(im, img_resized, sz, 0, 0, cv::INTER_AREA);
-   cv::cvtColor(img_resized, img_gray, cv::COLOR_BGR2GRAY); //CV_BGR2GRAY
-   //hog_detector.compute(img_resized, feat, cv::Size(8, 8), cv::Size(0, 0), foundLocations);
+   // convert to grayscale
+   cv::cvtColor(img_resized, img_gray, cv::COLOR_BGR2GRAY);
+   // compute the descriptors
    hog_detector.compute(img_resized, feat, cv::Size(8, 8), cv::Size(0, 0), foundLocations);
    if (show) {
        visualizeHOG(img_resized, feat, hog_detector, 6);
@@ -182,23 +194,5 @@ void HOGDescriptor::detectHOGDescriptor(cv::Mat &im, std::vector<float> &feat, c
 cv::HOGDescriptor & HOGDescriptor::getHog_detector() {
     // Fill code here
     return hog_detector;
-}
-
-cv::Mat HOGDescriptor::resizeToBoundingBox(cv::Mat &inputImage, cv::Size &winSize)
-{
-    cv::Mat resizedInputImage;
-    if (inputImage.rows < winSize.height || inputImage.cols < winSize.width)
-    {
-        float scaleFactor = fmax((winSize.height * 1.0f) / inputImage.rows, (winSize.width * 1.0f) / inputImage.cols);
-        cv::resize(inputImage, resizedInputImage, cv::Size(0, 0), scaleFactor, scaleFactor, cv::INTER_LINEAR);
-    }
-    else
-    {
-        resizedInputImage = inputImage;
-    }
-
-    cv::Rect r = cv::Rect((resizedInputImage.cols - winSize.width) / 2, (resizedInputImage.rows - winSize.height) / 2,
-                  winSize.width, winSize.height);
-    return resizedInputImage(r);
 }
 

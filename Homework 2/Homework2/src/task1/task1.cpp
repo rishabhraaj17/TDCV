@@ -22,7 +22,6 @@ int main(){
 
     HOGDescriptor hogDescriptor;
     hogDescriptor.detectHOGDescriptor(im, descriptors, cv::Size(128, 128), true);
-    //hogDescriptor.visualizeHOG(im, descriptors, hogDescriptor.getHog_detector(), 8);
 
     return 0;
 }

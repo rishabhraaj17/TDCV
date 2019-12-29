@@ -132,8 +132,6 @@ public:
 
 private:
     bool is_init;
-
-    cv::Mat resizeToBoundingBox(cv::Mat &inputImage, cv::Size &winSize);
 };
 
 #endif //RF_HOGDESCRIPTOR_H
