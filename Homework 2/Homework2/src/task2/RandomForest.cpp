@@ -1,4 +1,5 @@
 #include "RandomForest.h"
+#include "../../external/RandomRotation.h"
 
 RandomForest::RandomForest() {
     mTreeCount = 16;
@@ -343,7 +344,7 @@ std::vector<cv::Mat> RandomForest::augmentImage(cv::Mat &inputImage) {
         {
             cv::Mat randomlyRotatedImage(rotatedImage.size(), rotatedImage.type());
             cv::RNG rng(time(0));
-            //FIXME RandomRotateImage(rotatedImage, randomlyRotatedImage, 90, 30, 30, cv::Rect(0, 0, 0, 0), rng);
+            RandomRotateImage(rotatedImage, randomlyRotatedImage, 90, 30, 30, cv::Rect(0, 0, 0, 0), rng);
             currentImageAugmentations.push_back(randomlyRotatedImage);
             // cv::imshow("input image", rotatedImage);
             // cv::imshow("RandomRotationImage", randomlyRotatedImage);
