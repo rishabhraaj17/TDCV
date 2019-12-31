@@ -16,12 +16,16 @@ include_directories(${PROJECT_SOURCE_DIR}/include)
 set(HEADER_FILES
         include/HOGDescriptor.h
         include/RandomForest.h
-        external/RandomRotation.h)
+        external/RandomRotation.h
+        external/Util.h
+        external/DataAugmentation.h)
 
 set(SOURCE_FILES
         src/task1/HOGDescriptor.cpp
         src/task2/RandomForest.cpp
-        external/RandomRotation.cpp)
+        external/RandomRotation.cpp
+        external/Util.cpp
+        external/DataAugmentation.cpp)
 
 
 # can rename executables further
