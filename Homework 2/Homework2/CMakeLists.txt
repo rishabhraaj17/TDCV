@@ -9,23 +9,30 @@ find_package(PkgConfig REQUIRED)
 find_package(OpenCV REQUIRED)
 include_directories(${OPENCV_INCLUDE_DIR})
 
+set(Boost_USE_STATIC_LIBS OFF)
+set(Boost_USE_MULTITHREADED ON)
+set(Boost_USE_STATIC_RUNTIME OFF)
+find_package(Boost 1.65.1 COMPONENTS filesystem regex)
+#[[if(Boost_FOUND)
+    include_directories(${Boost_INCLUDE_DIRS})
+    add_executable(progname file1.cxx file2.cxx)
+    target_link_libraries(progname ${Boost_LIBRARIES})
+endif()]]
+
 set(CMAKE_CXX_STANDARD 14)
 
+include_directories(${Boost_INCLUDE_DIRS})
 include_directories(${PROJECT_SOURCE_DIR}/include)
 
 set(HEADER_FILES
         include/HOGDescriptor.h
         include/RandomForest.h
-        external/RandomRotation.h
-        external/Util.h
-        external/DataAugmentation.h)
+        include/Util.h)
 
 set(SOURCE_FILES
         src/task1/HOGDescriptor.cpp
         src/task2/RandomForest.cpp
-        external/RandomRotation.cpp
-        external/Util.cpp
-        external/DataAugmentation.cpp)
+        src/task2/Util.cpp)
 
 
 # can rename executables further
@@ -34,6 +41,16 @@ target_link_libraries(main ${OpenCV_LIBRARIES})
 
 add_executable(HogDescriptor src/task1/task1.cpp ${HEADER_FILES} ${SOURCE_FILES})
 target_link_libraries(HogDescriptor ${OpenCV_LIBRARIES})
+target_link_libraries(HogDescriptor ${Boost_LIBRARIES})
 
 add_executable(ObjectClassification src/task2/task2.cpp ${HEADER_FILES} ${SOURCE_FILES})
 target_link_libraries(ObjectClassification ${OpenCV_LIBRARIES})
+target_link_libraries(ObjectClassification ${Boost_LIBRARIES})
+
+# Debug
+#[[
+get_cmake_property(_variableNames VARIABLES)
+list (SORT _variableNames)
+foreach (_variableName ${_variableNames})
+    message(STATUS "${_variableName}=${${_variableName}}")
+endforeach()]]

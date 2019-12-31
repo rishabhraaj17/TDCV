@@ -38,42 +38,11 @@
 
 namespace util{
 
-	//! ‰æ‘œ‚©‚ç‚Í‚İo‚é‹éŒ`‚Ì®Œ`
+	//! ï¿½æ‘œï¿½ï¿½ï¿½ï¿½Í‚İoï¿½ï¿½ï¿½`ï¿½Ìï¿½ï¿½`
 	cv::Rect TruncateRect(const cv::Rect& obj_rect, const cv::Size& img_size);
 
-	//! ‰æ‘œ‚©‚ç‚Í‚İo‚é‹éŒ`‚ğ’†S‚ğˆÛ‚µ‚È‚ª‚ç®Œ`
+	//! ï¿½æ‘œï¿½ï¿½ï¿½ï¿½Í‚İoï¿½ï¿½ï¿½`ï¿½ğ’†Sï¿½ï¿½Ûï¿½ï¿½ï¿½ï¿½È‚ï¿½ï¿½ç®ï¿½`
 	cv::Rect TruncateRectKeepCenter(const cv::Rect& obj_rect, const cv::Size& max_size);
-
-	//! ƒAƒmƒe[ƒVƒ‡ƒ“ƒtƒ@ƒCƒ‹‚Ì“Ç‚İ‚İ
-	/*!
-	opencv_createsamles.exe‚Æ“¯Œ`®‚ÌƒAƒmƒe[ƒVƒ‡ƒ“ƒtƒ@ƒCƒ‹“Ç‚İ‘‚«
-	ReadCsvFile()ŠÖ”•K{
-	\param[in] gt_file ƒAƒmƒe[ƒVƒ‡ƒ“ƒtƒ@ƒCƒ‹–¼
-	\param[out] imgpathlist ‰æ‘œƒtƒ@ƒCƒ‹‚Ö‚ÌƒpƒX
-	\param[out] rectlist Še‰æ‘œ‚É‚Â‚¯‚ç‚ê‚½ƒAƒmƒe[ƒVƒ‡ƒ“‚ÌƒŠƒXƒg
-	\return “Ç‚İ‚İ‚Ì¬”Û
-	*/
-	bool LoadAnnotationFile(const std::string& gt_file, std::vector<std::string>& imgpathlist, std::vector<std::vector<cv::Rect>>& rectlist);
-
-	//! ƒAƒmƒe[ƒVƒ‡ƒ“ƒtƒ@ƒCƒ‹‚Ö’Ç‹L
-	/*!
-	opencv_createsamles.exe‚Æ“¯Œ`®‚ÌƒAƒmƒe[ƒVƒ‡ƒ“ƒtƒ@ƒCƒ‹“Ç‚İ‘‚«
-	\param[in] anno_file ƒAƒmƒe[ƒVƒ‡ƒ“ƒtƒ@ƒCƒ‹–¼
-	\param[in] img_file ‰æ‘œƒtƒ@ƒCƒ‹‚Ö‚ÌƒpƒX
-	\param[int] obj_rects Še‰æ‘œ‚É‚Â‚¯‚ç‚ê‚½ƒAƒmƒe[ƒVƒ‡ƒ“‚ÌƒŠƒXƒg
-	\return •Û‘¶‚Ì¬”Û
-	*/
-	bool AddAnnotationLine(const std::string& anno_file, const std::string& img_file, const std::vector<cv::Rect>& obj_rects, const std::string& sep);
-
-	// ƒfƒBƒŒƒNƒgƒŠ‚©‚ç‰æ‘œƒtƒ@ƒCƒ‹–¼ˆê——‚ğæ“¾
-	bool ReadImageFilesInDirectory(const std::string& img_dir, std::vector<std::string>& image_lists);
-
-	bool hasImageExtention(const std::string& filename);
-
-	bool ReadCSVFile(const std::string& input_file, std::vector<std::vector<std::string>>& output_strings,
-		const std::vector<std::string>& separater_vec = std::vector<std::string>());;
-
-	std::vector<std::string> TokenizeString(const std::string& input_string, const std::vector<std::string>& separater_vec);
 }
 
 #endif

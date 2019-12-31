@@ -217,15 +217,12 @@ cv::Rect ExpandRectForRotate(const cv::Rect& area)
 }
 
 
-void RandomRotateImage(const cv::Mat& src, cv::Mat& dst, float yaw_sigma, float pitch_sigma, float roll_sigma, const cv::Rect& area, cv::RNG rng,
-	float Z, int interpolation, int boarder_mode, const cv::Scalar boarder_color)
+void RandomRotateImage(const cv::Mat& src, cv::Mat& dst, float yaw_range, float pitch_range, float roll_range, const cv::Rect& area, cv::RNG rng,
+                       float Z, int interpolation, int boarder_mode, const cv::Scalar boarder_color)
 {
-	double yaw = rng.gaussian(yaw_sigma);
-	double pitch = rng.gaussian(pitch_sigma);
-	double roll = rng.gaussian(roll_sigma);
-	//double yaw = rng.uniform(-yaw_range / 2, yaw_range / 2);
-	//double pitch = rng.uniform(-pitch_range / 2, pitch_range / 2);
-	//double roll = rng.uniform(-roll_range / 2, roll_range / 2);
+	double yaw = rng.uniform(-yaw_range / 2, yaw_range / 2);
+	double pitch = rng.uniform(-pitch_range / 2, pitch_range / 2);
+	double roll = rng.uniform(-roll_range / 2, roll_range / 2);
 
 	cv::Rect rect = (area.width <= 0 || area.height <= 0) ? cv::Rect(0, 0, src.cols, src.rows) : 
 		ExpandRectForRotate(area);
@@ -234,7 +231,7 @@ void RandomRotateImage(const cv::Mat& src, cv::Mat& dst, float yaw_sigma, float 
 	cv::Mat rot_img;
 	RotateImage(src(rect).clone(), rot_img, yaw, pitch, roll, Z, interpolation, boarder_mode, boarder_color);
 
-	cv::Rect dst_area((rot_img.cols - area.width) / 2, (rot_img.rows - area.height) / 2, area.width, area.height);
+	cv::Rect dst_area((rot_img.cols - rect.width) / 2, (rot_img.rows - rect.height) / 2, rect.width, rect.height);
 	dst_area = util::TruncateRectKeepCenter(dst_area, rot_img.size());
 	dst = rot_img(dst_area).clone();
 }

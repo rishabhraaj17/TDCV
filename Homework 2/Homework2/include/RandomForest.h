@@ -92,6 +92,24 @@ private:
                                             bool undersampling);
 
     std::vector<cv::Mat> augmentImage(cv::Mat &inputImage);
+
+    void RandomRotateImage(const cv::Mat& src, cv::Mat& dst, float yaw_range, float pitch_range, float roll_range, const cv::Rect& area = cv::Rect(-1,-1, 0, 0), cv::RNG rng = cv::RNG(),
+                           float Z = 1000, int interpolation = cv::INTER_LINEAR, int boarder_mode = cv::BORDER_CONSTANT, const cv::Scalar boarder_color = cv::Scalar(0, 0, 0));
+
+    void ImageRotate(const cv::Mat &src, cv::Mat &dst, float yaw, float pitch, float roll, float Z, int interpolation,
+                     int boarder_mode, const cv::Scalar &border_color);
+
+    void composeExternalMatrix(float yaw, float pitch, float roll, float trans_x, float trans_y, float trans_z,
+                               cv::Mat &external_matrix);
+
+    cv::Mat Rect2Mat(const cv::Rect &img_rect);
+
+    void CircumTransImgRect(const cv::Size &img_size, const cv::Mat &transM, cv::Rect_<double> &CircumRect);
+
+    void CreateMap(const cv::Size &src_size, const cv::Rect_<double> &dst_rect, const cv::Mat &transMat, cv::Mat &map_x,
+                   cv::Mat &map_y);
+
+    cv::Rect ExpandRectForRotate(const cv::Rect &area);
 };
 
 #endif //RF_RANDOMFOREST_H
