@@ -571,7 +571,7 @@ cv::Rect RandomForest::ExpandRectForRotate(const cv::Rect& area)
     return exp_rect;
 }
 
-cv::Ptr<RandomForest> RandomForest::create(int numberOfClasses, int numberOfDTrees, Size winSize) {
+cv::Ptr<RandomForest> RandomForest::create(int numberOfClasses, int numberOfDTrees, cv::Size winSize) {
     cv::Ptr<RandomForest> randomForest = new RandomForest();
     randomForest->mMaxCategories = numberOfClasses;
     randomForest->mTreeCount = numberOfDTrees;
