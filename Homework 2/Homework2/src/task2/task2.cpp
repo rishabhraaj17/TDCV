@@ -153,7 +153,7 @@ void testForest(){
     float subsetPercentage = 50.0f;
     bool undersampling = true;
     bool augment = false;
-    randomForest->train(trainingImagesLabelVector, subsetPercentage, winStride, padding, undersampling, augment);
+    randomForest->train(trainingImagesLabelVector, subsetPercentage, winStride, padding, undersampling, augment, winSize);
 
     // Predict on test dataset
     float accuracy = 0;
@@ -161,7 +161,7 @@ void testForest(){
     for (size_t i = 0; i < testImagesLabelVector.size(); i++)
     {
         cv::Mat testImage = testImagesLabelVector.at(i).second;
-        Prediction prediction = randomForest->predict(testImage, winStride, padding);
+        Prediction prediction = randomForest->predict(testImage, winStride, padding, winSize);
         if (testImagesLabelVector.at(i).first == prediction.label)
         {
             accuracy += 1;

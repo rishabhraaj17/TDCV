@@ -83,7 +83,7 @@ std::vector<cv::Ptr<cv::ml::DTrees> > RandomForest::getTrees(){
 
 void
 RandomForest::train(std::vector<std::pair<int, cv::Mat>> trainingImagesLabelVector, float subsetPercentage, cv::Size winStride,
-                    cv::Size padding, bool undersampling, bool augment) {
+                    cv::Size padding, bool undersampling, bool augment, cv::Size winSize = cv::Size(128, 128)) {
     // Fill
     // Augment the dataset
     std::vector<std::pair<int, cv::Mat>> augmentedTrainingImagesLabelVector;
@@ -116,14 +116,15 @@ RandomForest::train(std::vector<std::pair<int, cv::Mat>> trainingImagesLabelVect
 
         cv::Ptr<cv::ml::DTrees> model = trainDecisionTree(trainingImagesLabelSubsetVector,
                                                           winStride,
-                                                          padding);
+                                                          padding,
+                                                          winSize);
         mTrees.push_back(model);
     }
 }
 
-Prediction RandomForest::predict(cv::Mat &testImage, cv::Size winStride, cv::Size padding) {
+Prediction RandomForest::predict(cv::Mat &testImage, cv::Size winStride, cv::Size padding, cv::Size winSize = cv::Size(128, 128)) {
     // Fill
-    cv::Mat resizedInputImage = resizeToBoundingBox(testImage, cv::Size(128, 128)); //fixme
+    cv::Mat resizedInputImage = resizeToBoundingBox(testImage, winSize); //fixme
 
     // Compute Hog only of center crop of grayscale image
     std::vector<float> descriptors;
@@ -240,7 +241,7 @@ cv::HOGDescriptor RandomForest::createHogDescriptor(cv::Size size = cv::Size(128
 
 cv::Ptr<cv::ml::DTrees>
 RandomForest::trainDecisionTree(std::vector<std::pair<int, cv::Mat>> &trainingImagesLabelVector, cv::Size winStride,
-                                cv::Size padding) {
+                                cv::Size padding, cv::Size winSize = cv::Size(128, 128)) {
     // Create the model
     cv::Ptr<cv::ml::DTrees> model = cv::ml::DTrees::create();
     // See https://docs.opencv.org/3.0-beta/modules/ml/doc/decision_trees.html#dtrees-params
@@ -259,7 +260,7 @@ RandomForest::trainDecisionTree(std::vector<std::pair<int, cv::Mat>> &trainingIm
     for (size_t i = 0; i < trainingImagesLabelVector.size(); i++)
     {
         cv::Mat inputImage = trainingImagesLabelVector.at(i).second;
-        cv::Mat resizedInputImage = resizeToBoundingBox(inputImage, cv::Size(128, 128)); //Fixme
+        cv::Mat resizedInputImage = resizeToBoundingBox(inputImage, winSize); //Fixme
 
         // Compute Hog only of center crop of grayscale image
         std::vector<float> descriptors;

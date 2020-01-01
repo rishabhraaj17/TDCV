@@ -43,9 +43,9 @@ public:
 
     void
     train(std::vector<std::pair<int, cv::Mat>> trainingImagesLabelVector, float subsetPercentage, cv::Size winStride,
-          cv::Size padding, bool undersampling, bool augment);
+          cv::Size padding, bool undersampling, bool augment, cv::Size winSize);
 
-    Prediction predict(cv::Mat &testImage, cv::Size winStride, cv::Size padding);
+    Prediction predict(cv::Mat &testImage, cv::Size winStride, cv::Size padding, cv::Size winSize);
 
     std::vector<std::pair<int, cv::Mat>> loadTrainDataset();
 
@@ -90,7 +90,8 @@ private:
 
     cv::Ptr<cv::ml::DTrees> trainDecisionTree(std::vector<std::pair<int, cv::Mat>> &trainingImagesLabelVector,
                                               cv::Size winStride,
-                                              cv::Size padding);
+                                              cv::Size padding,
+                                              cv::Size winSize);
 
     std::vector<std::pair<int, cv::Mat>>
     generateTrainingImagesLabelSubsetVector(std::vector<std::pair<int, cv::Mat>> &trainingImagesLabelVector,
@@ -100,8 +101,10 @@ private:
     std::vector<cv::Mat> augmentImage(cv::Mat &inputImage);
 
     // copied from external library : https://github.com/takmin/DataAugmentation
-    void RandomRotateImage(const cv::Mat& src, cv::Mat& dst, float yaw_range, float pitch_range, float roll_range, const cv::Rect& area = cv::Rect(-1,-1, 0, 0), cv::RNG rng = cv::RNG(),
-                           float Z = 1000, int interpolation = cv::INTER_LINEAR, int boarder_mode = cv::BORDER_CONSTANT, const cv::Scalar boarder_color = cv::Scalar(0, 0, 0));
+    void RandomRotateImage(const cv::Mat &src, cv::Mat &dst, float yaw_range, float pitch_range, float roll_range,
+                           const cv::Rect &area = cv::Rect(-1, -1, 0, 0), cv::RNG rng = cv::RNG(),
+                           float Z = 1000, int interpolation = cv::INTER_LINEAR, int boarder_mode = cv::BORDER_CONSTANT,
+                           const cv::Scalar boarder_color = cv::Scalar(0, 0, 0));
 
     void ImageRotate(const cv::Mat &src, cv::Mat &dst, float yaw, float pitch, float roll, float Z, int interpolation,
                      int boarder_mode, const cv::Scalar &border_color);
