@@ -35,10 +35,18 @@ void RandomForest::setTreeCount(int treeCount) {
     mTreeCount = treeCount;
 }
 
+int RandomForest::getTreeCount(){
+    return mTreeCount;
+}
+
 void RandomForest::setMaxDepth(int maxDepth) {
     mMaxDepth = maxDepth;
     for (uint treeIdx = 0; treeIdx < mTreeCount; treeIdx++)
         mTrees[treeIdx]->setMaxDepth(mMaxDepth);
+}
+
+int RandomForest::getMaxDepth(){
+    return mMaxDepth;
 }
 
 void RandomForest::setCVFolds(int cvFols) {
@@ -46,14 +54,30 @@ void RandomForest::setCVFolds(int cvFols) {
     mCVFolds = cvFols;
 }
 
+int RandomForest::getCVFolds(){
+    return mCVFolds;
+}
+
 void RandomForest::setMinSampleCount(int minSampleCount) {
     // Fill
     mMinSampleCount = minSampleCount;
 }
 
+int RandomForest::getMinSampleCount(){
+    return mMinSampleCount;
+}
+
 void RandomForest::setMaxCategories(int maxCategories) {
     // Fill
     mMaxCategories = maxCategories;
+}
+
+int RandomForest::getMaxCategories(){
+    return mMaxCategories;
+}
+
+std::vector<cv::Ptr<cv::ml::DTrees> > RandomForest::getTrees(){
+    return mTrees;
 }
 
 
@@ -99,7 +123,7 @@ RandomForest::train(std::vector<std::pair<int, cv::Mat>> trainingImagesLabelVect
 
 Prediction RandomForest::predict(cv::Mat &testImage, cv::Size winStride, cv::Size padding) {
     // Fill
-    cv::Mat resizedInputImage = resizeToBoundingBox(testImage);
+    cv::Mat resizedInputImage = resizeToBoundingBox(testImage, cv::Size());
 
     // Compute Hog only of center crop of grayscale image
     std::vector<float> descriptors;
@@ -144,7 +168,7 @@ std::vector<std::pair<int, cv::Mat>> RandomForest::loadTrainDataset() {
             std::stringstream imagePath;
             imagePath << std::string(PROJ_DIR) << "/data/task2/train/" << std::setfill('0') << std::setw(2) << i << "/" << std::setfill('0') << std::setw(4) << j << ".jpg";
             std::string imagePathStr = imagePath.str();
-            std::cout << imagePathStr << std::endl;
+            //std::cout << imagePathStr << std::endl;
             std::pair<int, cv::Mat> labelImagesTrainPair;
             labelImagesTrainPair.first = i;
             labelImagesTrainPair.second = imread(imagePathStr, cv::IMREAD_UNCHANGED).clone();
@@ -159,15 +183,16 @@ std::vector<std::pair<int, cv::Mat>> RandomForest::loadTestDataset() {
     std::vector<std::pair<int, cv::Mat>> labelImagesTest;
     labelImagesTest.reserve(60);
     int numberOfTestImages[6] = {10, 10, 10, 10, 10, 10};
+    int numberOfTrainImages[6] = {49, 67, 42, 53, 67, 110};
 
     for (int i = 0; i < 6; i++)
     {
         for (size_t j = 0; j < numberOfTestImages[i]; j++)
         {
             std::stringstream imagePath;
-            imagePath << std::string(PROJ_DIR) << "/data/task2/test/" << std::setfill('0') << std::setw(2) << i << "/" << std::setfill('0') << std::setw(4) << j + numberOfTestImages[i] << ".jpg";
+            imagePath << std::string(PROJ_DIR) << "/data/task2/test/" << std::setfill('0') << std::setw(2) << i << "/" << std::setfill('0') << std::setw(4) << j + numberOfTrainImages[i] << ".jpg";
             std::string imagePathStr = imagePath.str();
-            std::cout << imagePathStr << std::endl;
+            //std::cout << imagePathStr << std::endl;
             std::pair<int, cv::Mat> labelImagesTestPair;
             labelImagesTestPair.first = i;
             labelImagesTestPair.second = imread(imagePathStr, cv::IMREAD_UNCHANGED).clone();
@@ -190,8 +215,9 @@ std::vector<int> RandomForest::getRandomUniqueIndices(int start, int end, int nu
     return std::vector<int>(indices.begin(), indices.begin() + numOfSamples);
 }
 
-cv::HOGDescriptor RandomForest::createHogDescriptor() {
-    cv::Size wsize(128, 128);
+cv::HOGDescriptor RandomForest::createHogDescriptor(cv::Size size = cv::Size(128, 128)) {
+    //cv::Size wsize(128, 128);
+    cv::Size wsize = size;
     cv::Size blockSize(16, 16);
     cv::Size stride(8, 8);
     cv::Size cell(8, 8);
@@ -233,7 +259,7 @@ RandomForest::trainDecisionTree(std::vector<std::pair<int, cv::Mat>> &trainingIm
     for (size_t i = 0; i < trainingImagesLabelVector.size(); i++)
     {
         cv::Mat inputImage = trainingImagesLabelVector.at(i).second;
-        cv::Mat resizedInputImage = resizeToBoundingBox(inputImage);
+        cv::Mat resizedInputImage = resizeToBoundingBox(inputImage, cv::Size());
 
         // Compute Hog only of center crop of grayscale image
         std::vector<float> descriptors;
@@ -255,7 +281,8 @@ RandomForest::trainDecisionTree(std::vector<std::pair<int, cv::Mat>> &trainingIm
     return model;
 }
 
-cv::Mat RandomForest::resizeToBoundingBox(cv::Mat &inputImage) {
+cv::Mat RandomForest::resizeToBoundingBox(cv::Mat &inputImage, cv::Size size) {
+    mWinSize = size;
     cv::Mat resizedInputImage;
     if (inputImage.rows < mWinSize.height || inputImage.cols < mWinSize.width)
     {
@@ -381,7 +408,7 @@ cv::Ptr<RandomForest> RandomForest::createRandomForest(int numberOfClasses, int 
     randomForest->mTreeCount = numberOfDTrees;
     randomForest->mWinSize = winSize;
     randomForest->mTrees.reserve(numberOfDTrees);
-    randomForest->mHogDescriptor = randomForest->createHogDescriptor();
+    randomForest->mHogDescriptor = randomForest->createHogDescriptor(cv::Size());
     long unsigned int timestamp = static_cast<long unsigned int>(time(0));
     std::cout << timestamp << std::endl;
     randomForest->mRandomGenerator = std::mt19937(timestamp);
@@ -542,4 +569,17 @@ cv::Rect RandomForest::ExpandRectForRotate(const cv::Rect& area)
     exp_rect.y = area.y - (exp_rect.height - area.height) / 2;
 
     return exp_rect;
+}
+
+cv::Ptr<RandomForest> RandomForest::create(int numberOfClasses, int numberOfDTrees, Size winSize) {
+    cv::Ptr<RandomForest> randomForest = new RandomForest();
+    randomForest->mMaxCategories = numberOfClasses;
+    randomForest->mTreeCount = numberOfDTrees;
+    randomForest->mWinSize = winSize;
+    randomForest->mTrees.reserve(numberOfDTrees);
+    randomForest->mHogDescriptor = randomForest->createHogDescriptor();
+    long unsigned int timestamp = static_cast<long unsigned int>(time(0));
+    std::cout << timestamp << std::endl;
+    randomForest->mRandomGenerator = std::mt19937(timestamp);
+    return randomForest;
 }

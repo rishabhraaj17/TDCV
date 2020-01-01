@@ -12,7 +12,7 @@
 struct Prediction {
     int label;
     float confidence;
-    cv::Rect bbox;
+    cv::Rect boundingBox;
 };
 
 struct GreaterThan {
@@ -61,10 +61,31 @@ public:
     static cv::Ptr<RandomForest> createRandomForest(int numberOfClasses, int numberOfDTrees, cv::Size winSize);
 
 
+    int getCVFolds();
+
+    int getMaxCategories();
+
+    int getMaxDepth();
+
+    int getMinSampleCount();
+
+    int getTreeCount();
+
+    cv::HOGDescriptor createHogDescriptor(cv::Size size);
+
+    cv::Mat resizeToBoundingBox(cv::Mat &inputImage, cv::Size size);
+
+    std::vector<cv::Ptr<cv::ml::DTrees>> getTrees();
+
+    static cv::Ptr<RandomForest> create(int numberOfClasses,
+                                        int numberOfDTrees,
+                                        cv::Size winSize);
+
 private:
     int mTreeCount;
     int mMaxDepth;
     int mCVFolds;
+
     int mMinSampleCount;
     int mMaxCategories;
 
@@ -74,17 +95,14 @@ private:
     std::mt19937 mRandomGenerator;
 
     cv::Size mWinSize;
+
     cv::HOGDescriptor mHogDescriptor;
 
     std::vector<int> getRandomUniqueIndices(int start, int end, int numOfSamples);
 
-    cv::HOGDescriptor createHogDescriptor();
-
     cv::Ptr<cv::ml::DTrees> trainDecisionTree(std::vector<std::pair<int, cv::Mat>> &trainingImagesLabelVector,
                                               cv::Size winStride,
                                               cv::Size padding);
-
-    cv::Mat resizeToBoundingBox(cv::Mat &inputImage);
 
     std::vector<std::pair<int, cv::Mat>>
     generateTrainingImagesLabelSubsetVector(std::vector<std::pair<int, cv::Mat>> &trainingImagesLabelVector,
@@ -93,6 +111,7 @@ private:
 
     std::vector<cv::Mat> augmentImage(cv::Mat &inputImage);
 
+    // copied from external library : https://github.com/takmin/DataAugmentation
     void RandomRotateImage(const cv::Mat& src, cv::Mat& dst, float yaw_range, float pitch_range, float roll_range, const cv::Rect& area = cv::Rect(-1,-1, 0, 0), cv::RNG rng = cv::RNG(),
                            float Z = 1000, int interpolation = cv::INTER_LINEAR, int boarder_mode = cv::BORDER_CONSTANT, const cv::Scalar boarder_color = cv::Scalar(0, 0, 0));
 
