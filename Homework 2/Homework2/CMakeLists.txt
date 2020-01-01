@@ -27,12 +27,14 @@ include_directories(${PROJECT_SOURCE_DIR}/include)
 set(HEADER_FILES
         include/HOGDescriptor.h
         include/RandomForest.h
-        include/Util.h)
+        include/Util.h
+        include/NonMaximalSuppression.h)
 
 set(SOURCE_FILES
         src/task1/HOGDescriptor.cpp
         src/task2/RandomForest.cpp
-        src/task2/Util.cpp)
+        src/task2/Util.cpp
+        src/task3/NonMaximalSuppression.cpp)
 
 
 # can rename executables further
@@ -46,6 +48,10 @@ target_link_libraries(HogDescriptor ${Boost_LIBRARIES})
 add_executable(ObjectClassification src/task2/task2.cpp ${HEADER_FILES} ${SOURCE_FILES})
 target_link_libraries(ObjectClassification ${OpenCV_LIBRARIES})
 target_link_libraries(ObjectClassification ${Boost_LIBRARIES})
+
+add_executable(ObjectDetection src/task3/task3.cpp ${HEADER_FILES} ${SOURCE_FILES})
+target_link_libraries(ObjectDetection ${OpenCV_LIBRARIES})
+target_link_libraries(ObjectDetection ${Boost_LIBRARIES})
 
 # Debug
 #[[
