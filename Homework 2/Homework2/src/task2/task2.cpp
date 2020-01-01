@@ -142,16 +142,6 @@ void testForest(){
     int numberOfDTrees = 40;
     cv::Size winSize(128, 128);
     cv::Ptr<RandomForest> randomForest = RandomForest::createRandomForest(numberOfClasses, numberOfDTrees, winSize);
-    /*RandomForest *randomForest = new RandomForest();
-    randomForest->setMaxCategories(numberOfClasses);
-    randomForest->setTreeCount(numberOfDTrees);
-    randomForest->mWinSize = winSize; // made public
-    randomForest->getTrees().reserve(numberOfDTrees);
-    cv::HOGDescriptor hog = randomForest->createHogDescriptor(winSize);
-    randomForest->mHogDescriptor = hog;
-    long unsigned int timestamp = static_cast<long unsigned int>(time(0));
-    std::cout << timestamp << std::endl;
-    randomForest->mRandomGenerator = std::mt19937(timestamp); // made public*/
 
     vector<pair<int, cv::Mat>> trainingImagesLabelVector = randomForest->loadTrainDataset();
     vector<pair<int, cv::Mat>> testImagesLabelVector = randomForest->loadTestDataset();
@@ -197,10 +187,7 @@ void testForest(){
 
 int main(){
     //cout << "OpenCV version : " << CV_VERSION << endl;
-    //testDTrees();
+    testDTrees();
     testForest();
-    //RandomForest randomForest;
-    //std::vector<std::pair<int, cv::Mat>> trainDataset = randomForest.loadTrainDataset();
-    //std::vector<std::pair<int, cv::Mat>> testDataset = randomForest.loadTestDataset();
     return 0;
 }

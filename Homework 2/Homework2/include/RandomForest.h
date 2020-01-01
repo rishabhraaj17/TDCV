@@ -25,13 +25,6 @@ class RandomForest {
 public:
     RandomForest();
 
-    /*RandomForest() : mTreeCount(16) {
-        mMaxDepth = 200;
-        mCVFolds = 0;
-        mMinSampleCount = 2;
-        mMaxCategories = 6;
-    }*/
-
     // You can create the forest directly in the constructor or create an empty forest and use the below methods to populate it
     RandomForest(int treeCount, int maxDepth, int CVFolds, int minSampleCount, int maxCategories);
 
@@ -77,21 +70,18 @@ public:
 
     std::vector<cv::Ptr<cv::ml::DTrees>> getTrees();
 
-    static cv::Ptr<RandomForest> create(int numberOfClasses,
-                                        int numberOfDTrees,
-                                        cv::Size winSize);
+private:
+    int mTreeCount;
+    int mMaxDepth;
+    int mCVFolds;
+
+    int mMinSampleCount;
+    int mMaxCategories;
 
     cv::Size mWinSize;
     cv::HOGDescriptor mHogDescriptor;
     std::mt19937 mRandomGenerator;
-private:
-    int mTreeCount;
-    int mMaxDepth;
 
-    int mCVFolds;
-    int mMinSampleCount;
-
-    int mMaxCategories;
     // M-Trees for constructing thr forest
     // decision tress
     std::vector<cv::Ptr<cv::ml::DTrees> > mTrees;

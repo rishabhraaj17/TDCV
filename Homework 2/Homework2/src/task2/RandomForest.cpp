@@ -570,16 +570,3 @@ cv::Rect RandomForest::ExpandRectForRotate(const cv::Rect& area)
 
     return exp_rect;
 }
-
-cv::Ptr<RandomForest> RandomForest::create(int numberOfClasses, int numberOfDTrees, cv::Size winSize) {
-    cv::Ptr<RandomForest> randomForest = new RandomForest();
-    randomForest->mMaxCategories = numberOfClasses;
-    randomForest->mTreeCount = numberOfDTrees;
-    randomForest->mWinSize = winSize;
-    randomForest->mTrees.reserve(numberOfDTrees);
-    randomForest->mHogDescriptor = randomForest->createHogDescriptor();
-    long unsigned int timestamp = static_cast<long unsigned int>(time(0));
-    std::cout << timestamp << std::endl;
-    randomForest->mRandomGenerator = std::mt19937(timestamp);
-    return randomForest;
-}
