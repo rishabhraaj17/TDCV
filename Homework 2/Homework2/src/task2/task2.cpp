@@ -75,50 +75,6 @@ void testDTrees() {
     cout << "TASK 2 - Single Decision Tree Accuracy is: [" << accuracy / testImagesLabelVector.size() << "]." << endl;
     cout << "==================================================" << endl;
 
-    //TODO
-    /*RandomForest randomForest;
-    // Create the model
-    cv::Ptr<cv::ml::DTrees> model = cv::ml::DTrees::create();
-    model->setCVFolds(0); // set num cross validation folds - Not implemented in OpenCV
-    // model->setMaxCategories();  // set max number of categories
-    model->setMaxDepth(6);       // set max tree depth
-    model->setMinSampleCount(2); // set min sample count
-    cout << "Number of cross validation folds are: " << model->getCVFolds() << endl;
-    cout << "Max Categories are: " << model->getMaxCategories() << endl;
-    cout << "Max depth is: " << model->getMaxDepth() << endl;
-    cout << "Minimum Sample Count: " << model->getMinSampleCount() << endl;
-
-
-    // Compute Hog Features for all the training images
-    cv::Size winSize(128, 128);
-    cv::HOGDescriptor hog = randomForest.createHogDescriptor(winSize);
-    cv::Size winStride(8, 8);
-    cv::Size padding(0, 0);
-
-    cv::Mat feats, labels;
-    for (size_t i = 0; i < trainingImagesLabelVector.size(); i++)
-    {
-        cv::Mat inputImage = trainingImagesLabelVector.at(i).second;
-        cv::Mat resizedInputImage = resizeToBoundingBox(inputImage, winSize);
-
-        // Compute Hog only of center crop of grayscale image
-        vector<float> descriptors;
-        vector<Point> foundLocations;
-        vector<double> weights;
-        hog.compute(resizedInputImage, descriptors, winStride, padding, foundLocations);
-
-        // Store the features and labels for model training.
-        // cout << "=====================================" << endl;
-        // cout << "Number of descriptors are: " << descriptors.size() << endl;
-        feats.push_back(cv::Mat(descriptors).clone().reshape(1, 1));
-        // cout << "New size of training features" << feats.size() << endl;
-        labels.push_back(trainingImagesLabelVector.at(i).first);
-        // cout << "New size of training labels" << labels.size() << endl;
-    }
-
-    cv::Ptr<cv::ml::TrainData> trainData = ml::TrainData::create(feats, ml::ROW_SAMPLE, labels);
-    model->train(trainData);*/
-
     //performanceEval<cv::ml::DTrees>(tree, train_data);
     //performanceEval<cv::ml::DTrees>(tree, test_data);
 
@@ -180,6 +136,60 @@ void testForest(){
     */
 
     //TODO
+
+    // Create model
+    int numberOfClasses = 6;
+    int numberOfDTrees = 40;
+    cv::Size winSize(128, 128);
+    cv::Ptr<RandomForest> randomForest = RandomForest::createRandomForest(numberOfClasses, numberOfDTrees, winSize);
+    /*RandomForest *randomForest = new RandomForest();
+    randomForest->setMaxCategories(numberOfClasses);
+    randomForest->setTreeCount(numberOfDTrees);
+    randomForest->mWinSize = winSize; // made public
+    randomForest->getTrees().reserve(numberOfDTrees);
+    cv::HOGDescriptor hog = randomForest->createHogDescriptor(winSize);
+    randomForest->mHogDescriptor = hog;
+    long unsigned int timestamp = static_cast<long unsigned int>(time(0));
+    std::cout << timestamp << std::endl;
+    randomForest->mRandomGenerator = std::mt19937(timestamp); // made public*/
+
+    vector<pair<int, cv::Mat>> trainingImagesLabelVector = randomForest->loadTrainDataset();
+    vector<pair<int, cv::Mat>> testImagesLabelVector = randomForest->loadTestDataset();
+    cout << "Datasets Loaded!" << endl;
+
+    // Train the model
+    cv::Size winStride(8, 8);
+    cv::Size padding(0, 0);
+    float subsetPercentage = 50.0f;
+    bool undersampling = true;
+    bool augment = false;
+    randomForest->train(trainingImagesLabelVector, subsetPercentage, winStride, padding, undersampling, augment);
+
+    // Predict on test dataset
+    float accuracy = 0;
+    float accuracyPerClass[6] = {0};
+    for (size_t i = 0; i < testImagesLabelVector.size(); i++)
+    {
+        cv::Mat testImage = testImagesLabelVector.at(i).second;
+        Prediction prediction = randomForest->predict(testImage, winStride, padding);
+        if (testImagesLabelVector.at(i).first == prediction.label)
+        {
+            accuracy += 1;
+            accuracyPerClass[prediction.label] += 1;
+        }
+    }
+
+    cout << "==================================================" << endl;
+    cout << "TASK 2 - Random Forest Accuracy is: [" << accuracy / testImagesLabelVector.size() << "]." << endl;
+
+    int numberOfTrainImages[6] = {49, 67, 42, 53, 67, 110};
+    int numberOfTestImages[6] = {10, 10, 10, 10, 10, 10};
+    for (size_t i = 0; i < numberOfClasses; i++)
+    {
+        cout << "Class " << i << " accuracy: [" << accuracyPerClass[i] / numberOfTestImages[i] << "]." << endl;
+    }
+    cout << "==================================================" << endl;
+
     //performanceEval<RandomForest>(forest, train_data);
     //performanceEval<RandomForest>(forest, test_data);
 }
@@ -187,7 +197,7 @@ void testForest(){
 
 int main(){
     //cout << "OpenCV version : " << CV_VERSION << endl;
-    testDTrees();
+    //testDTrees();
     testForest();
     //RandomForest randomForest;
     //std::vector<std::pair<int, cv::Mat>> trainDataset = randomForest.loadTrainDataset();

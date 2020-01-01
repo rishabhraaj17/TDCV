@@ -123,7 +123,7 @@ RandomForest::train(std::vector<std::pair<int, cv::Mat>> trainingImagesLabelVect
 
 Prediction RandomForest::predict(cv::Mat &testImage, cv::Size winStride, cv::Size padding) {
     // Fill
-    cv::Mat resizedInputImage = resizeToBoundingBox(testImage, cv::Size());
+    cv::Mat resizedInputImage = resizeToBoundingBox(testImage, cv::Size(128, 128)); //fixme
 
     // Compute Hog only of center crop of grayscale image
     std::vector<float> descriptors;
@@ -235,7 +235,7 @@ cv::HOGDescriptor RandomForest::createHogDescriptor(cv::Size size = cv::Size(128
                                     l2HysThreshold, gcorrection, n_levels, gradient);
     //TODO: observe copying
     mHogDescriptor = hog_descriptor;
-    return mHogDescriptor;
+    return hog_descriptor;
 }
 
 cv::Ptr<cv::ml::DTrees>
@@ -245,7 +245,7 @@ RandomForest::trainDecisionTree(std::vector<std::pair<int, cv::Mat>> &trainingIm
     cv::Ptr<cv::ml::DTrees> model = cv::ml::DTrees::create();
     // See https://docs.opencv.org/3.0-beta/modules/ml/doc/decision_trees.html#dtrees-params
     model->setCVFolds(0);        // set num cross validation folds - Not implemented in OpenCV
-    model->setMaxCategories(10); // set max number of categories
+    model->setMaxCategories(6); // set max number of categories
     model->setMaxDepth(20);      // set max tree depth
     model->setMinSampleCount(2); // set min sample count
     // ToDo - Tweak this
@@ -259,7 +259,7 @@ RandomForest::trainDecisionTree(std::vector<std::pair<int, cv::Mat>> &trainingIm
     for (size_t i = 0; i < trainingImagesLabelVector.size(); i++)
     {
         cv::Mat inputImage = trainingImagesLabelVector.at(i).second;
-        cv::Mat resizedInputImage = resizeToBoundingBox(inputImage, cv::Size());
+        cv::Mat resizedInputImage = resizeToBoundingBox(inputImage, cv::Size(128, 128)); //Fixme
 
         // Compute Hog only of center crop of grayscale image
         std::vector<float> descriptors;
@@ -408,7 +408,7 @@ cv::Ptr<RandomForest> RandomForest::createRandomForest(int numberOfClasses, int 
     randomForest->mTreeCount = numberOfDTrees;
     randomForest->mWinSize = winSize;
     randomForest->mTrees.reserve(numberOfDTrees);
-    randomForest->mHogDescriptor = randomForest->createHogDescriptor(cv::Size());
+    randomForest->mHogDescriptor = randomForest->createHogDescriptor(winSize);
     long unsigned int timestamp = static_cast<long unsigned int>(time(0));
     std::cout << timestamp << std::endl;
     randomForest->mRandomGenerator = std::mt19937(timestamp);

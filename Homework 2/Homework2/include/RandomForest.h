@@ -81,22 +81,20 @@ public:
                                         int numberOfDTrees,
                                         cv::Size winSize);
 
+    cv::Size mWinSize;
+    cv::HOGDescriptor mHogDescriptor;
+    std::mt19937 mRandomGenerator;
 private:
     int mTreeCount;
     int mMaxDepth;
+
     int mCVFolds;
-
     int mMinSampleCount;
-    int mMaxCategories;
 
+    int mMaxCategories;
     // M-Trees for constructing thr forest
     // decision tress
     std::vector<cv::Ptr<cv::ml::DTrees> > mTrees;
-    std::mt19937 mRandomGenerator;
-
-    cv::Size mWinSize;
-
-    cv::HOGDescriptor mHogDescriptor;
 
     std::vector<int> getRandomUniqueIndices(int start, int end, int numOfSamples);
 
