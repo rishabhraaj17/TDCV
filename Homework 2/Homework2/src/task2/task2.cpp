@@ -1,3 +1,6 @@
+//
+// Created by rishabh on 29.12.19.
+//
 
 #include <opencv2/opencv.hpp>
 #include <iostream>
@@ -139,7 +142,7 @@ void testForest(){
 
     // Create model
     int numberOfClasses = 6;
-    int numberOfDTrees = 40;
+    int numberOfDTrees = 70;
     cv::Size winSize(128, 128);
     cv::Ptr<RandomForest> randomForest = RandomForest::createRandomForest(numberOfClasses, numberOfDTrees, winSize);
 

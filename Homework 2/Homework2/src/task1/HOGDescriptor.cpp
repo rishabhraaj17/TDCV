@@ -1,4 +1,6 @@
-
+//
+// Created by rishabh on 28.12.19.
+//
 
 #include "../../include/HOGDescriptor.h"
 #include <iostream>
