@@ -90,6 +90,7 @@ RandomForest::train(std::vector<std::pair<int, cv::Mat>> trainingImagesLabelVect
                     cv::Size padding, bool undersampling, bool augment, cv::Size winSize = cv::Size(128, 128)) {
     // Fill
     // Augment the dataset
+    int counter = 0;
     std::vector<std::pair<int, cv::Mat>> augmentedTrainingImagesLabelVector;
     augmentedTrainingImagesLabelVector.reserve(trainingImagesLabelVector.size() * 60);
     if (augment)
@@ -97,6 +98,7 @@ RandomForest::train(std::vector<std::pair<int, cv::Mat>> trainingImagesLabelVect
         for(auto&& trainingImagesLabelSample : trainingImagesLabelVector)
         {
             std::vector<cv::Mat> augmentedImages = augmentImage(trainingImagesLabelSample.second);
+            std::cout<< "Augumented Images Iteration : " << counter++ << std::endl;
             for (auto &&augmentedImage : augmentedImages)
             {
                 augmentedTrainingImagesLabelVector.push_back(std::pair<int, cv::Mat>(trainingImagesLabelSample.first, augmentedImage));
@@ -106,8 +108,8 @@ RandomForest::train(std::vector<std::pair<int, cv::Mat>> trainingImagesLabelVect
         augmentedTrainingImagesLabelVector = trainingImagesLabelVector;
     }
 
-    std::cout << trainingImagesLabelVector.size() << std::endl;
-    std::cout << augmentedTrainingImagesLabelVector.size() << std::endl;
+    std::cout <<  "Train set size before augumentation : " << trainingImagesLabelVector.size() << std::endl;
+    std::cout << "Train set size after augumentation : "<<augmentedTrainingImagesLabelVector.size() << std::endl;
 
     // Train each decision tree
     for (size_t i = 0; i < mTreeCount; i++)
@@ -236,7 +238,7 @@ cv::HOGDescriptor RandomForest::createHogDescriptor(cv::Size size = cv::Size(128
     int n_levels(cv::HOGDescriptor::DEFAULT_NLEVELS);
     //TODO: Observe true
     bool gradient(true);
-    cv::HOGDescriptor hog_descriptor(wsize, blockSize, stride, cell, bins, aperture, sigma, normType,
+    cv::HOGDescriptor hog_descriptor(wsize, blockSize, stride, cell, bins, aperture, sigma, cv::HOGDescriptor::L2Hys,
                                     l2HysThreshold, gcorrection, n_levels, gradient);
     //TODO: observe copying
     mHogDescriptor = hog_descriptor;
@@ -261,6 +263,7 @@ RandomForest::trainDecisionTree(std::vector<std::pair<int, cv::Mat>> &trainingIm
 
     // Compute Hog Features for all the training images
     cv::Mat feats, labels;
+    std::cout << "Size of training set : " << trainingImagesLabelVector.size() << std::endl;
     for (size_t i = 0; i < trainingImagesLabelVector.size(); i++)
     {
         cv::Mat inputImage = trainingImagesLabelVector.at(i).second;
@@ -270,15 +273,23 @@ RandomForest::trainDecisionTree(std::vector<std::pair<int, cv::Mat>> &trainingIm
         std::vector<float> descriptors;
         std::vector<cv::Point> foundLocations;
         std::vector<double> weights;
-        mHogDescriptor.compute(resizedInputImage, descriptors, winStride, padding, foundLocations);
+        try {
+            //cv::imshow(&"image " [ i], inputImage);
+            //cv::waitKey(0);
+            mHogDescriptor.compute(resizedInputImage, descriptors, winStride, padding, foundLocations);
+        } catch (cv::Exception &exception) {
+            std::cout<<"Exception here!!!"<<std::endl;
+        }
+
+        //mHogDescriptor.compute(resizedInputImage, descriptors, winStride, padding, foundLocations);
 
         // Store the features and labels for model training.
-        // cout << "=====================================" << endl;
-        // cout << "Number of descriptors are: " << descriptors.size() << endl;
+        //std::cout << "==" << i << "=====================================" << std::endl;
+        //std::cout << "Number of descriptors are: " << descriptors.size() << std::endl;
         feats.push_back(cv::Mat(descriptors).clone().reshape(1, 1));
-        // cout << "New size of training features" << feats.size() << endl;
+        //std::cout << "New size of training features" << feats.size() << std::endl;
         labels.push_back(trainingImagesLabelVector.at(i).first);
-        // cout << "New size of training labels" << labels.size() << endl;
+        //std::cout << "New size of training labels" << labels.size() << std::endl;
     }
 
     cv::Ptr<cv::ml::TrainData> trainData = cv::ml::TrainData::create(feats, cv::ml::ROW_SAMPLE, labels);

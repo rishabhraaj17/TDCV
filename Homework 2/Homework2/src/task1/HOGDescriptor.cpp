@@ -23,7 +23,7 @@ void HOGDescriptor::initDetector() {
     //! Maximum number of detection window increases. Default value is 64
     int n_levels(cv::HOGDescriptor::DEFAULT_NLEVELS);
     bool gradient(false);
-    cv::HOGDescriptor hogDescriptor(size, blockSize, stride, cell, bins, aperture, sigma, normType,
+    cv::HOGDescriptor hogDescriptor(size, blockSize, stride, cell, bins, aperture, sigma, cv::HOGDescriptor::L2Hys,
                                     l2HysThreshold, gcorrection, n_levels, gradient);
 
     hog_detector = hogDescriptor;

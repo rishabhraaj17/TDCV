@@ -6,6 +6,7 @@ add_definitions(-DPROJ_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 find_package(PkgConfig REQUIRED)
 
 # OpenCV
+set(OpenCV_DIR /usr/local/lib/cmake/opencv4)
 find_package(OpenCV REQUIRED)
 include_directories(${OPENCV_INCLUDE_DIR})
 
