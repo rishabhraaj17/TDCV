@@ -74,6 +74,10 @@ public:
 
     static std::vector<cv::Ptr<cv::ml::DTrees>> loadModel(const std::string &path, int treeCount);
 
+    void augmentAndSaveOnDisk(std::vector<std::pair<int, cv::Mat>> trainDataset, const std::string &folderPath, int num_classes);
+
+    std::vector<std::pair<int, cv::Mat>> loadAugmentedTrainDataset();
+
 private:
     int mTreeCount;
     int mMaxDepth;

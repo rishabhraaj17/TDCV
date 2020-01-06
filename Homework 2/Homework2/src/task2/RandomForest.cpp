@@ -191,6 +191,27 @@ std::vector<std::pair<int, cv::Mat>> RandomForest::loadTestDataset() {
     return testDataset;
 }
 
+std::vector<std::pair<int, cv::Mat>> RandomForest::loadAugmentedTrainDataset() {
+    std::vector<std::pair<int, cv::Mat>> augmentedTrainDataset;
+    augmentedTrainDataset.reserve(2940 + 4020 + 2520 + 3180 + 4020 + 6600);
+    int augmentedTrainImagesPerClassCount[6] = {2940, 4020, 2520, 3180, 4020, 6600};
+
+    for (int i = 0; i < 6; i++) {
+        for (size_t j = 0; j < augmentedTrainImagesPerClassCount[i]; j++) {
+            std::stringstream path;
+            path << std::string(PROJ_DIR) << "/data/generated/task2/train/" << i <<
+                 "/" <<  j << ".jpg";
+            std::string imagePathStr = path.str();
+            std::pair<int, cv::Mat> pair;
+            pair.first = i;
+            pair.second = imread(imagePathStr, cv::IMREAD_UNCHANGED).clone();
+            augmentedTrainDataset.push_back(pair);
+        }
+    }
+
+    return augmentedTrainDataset;
+}
+
 cv::HOGDescriptor RandomForest::createHogDescriptor(cv::Size size = cv::Size(128, 128)) {
     cv::Size wSize = size;
     cv::Size blockSize(16, 16);
@@ -223,7 +244,7 @@ RandomForest::trainSingleDecisionTree(std::vector<std::pair<int, cv::Mat>> &trai
 
     cv::Mat features, labels;
     std::cout << "Size of training set : " << trainingImagesLabelVector.size() << std::endl;
-    for (auto & i : trainingImagesLabelVector) {
+    for (auto &i : trainingImagesLabelVector) {
         cv::Mat inputImage = i.second;
         cv::Mat resizedInputImage = imageResize(inputImage, winSize);
 
@@ -416,6 +437,34 @@ void RandomForest::trainSingleTree(RandomForest *randomForest,
     cv::Ptr<cv::ml::TrainData> trainData = cv::ml::TrainData::create(features, cv::ml::ROW_SAMPLE, labels);
     randomForest->getTrees()[0]->train(trainData);
     std::cout << "Single Decision Tree Trained!" << std::endl;
+}
+
+void
+RandomForest::augmentAndSaveOnDisk(std::vector<std::pair<int, cv::Mat>> trainDataset, const std::string &folderPath,
+                                   int num_classes) {
+    std::vector<std::string> labelDirectories;
+    labelDirectories.reserve(num_classes);
+    for (size_t i = 0; i < num_classes; i++) {
+        labelDirectories.push_back(folderPath + "/" + std::to_string(i));
+        cv::utils::fs::createDirectories(folderPath + "/" + std::to_string(i));
+    }
+    int counter = 0;
+    std::vector<int> imgNames;
+    imgNames.reserve(num_classes);
+    for (size_t i = 0; i < num_classes; i++) {
+        imgNames[i] = 0;
+    }
+    std::vector<std::pair<int, cv::Mat>> augmentedTrainDataset;
+    augmentedTrainDataset.reserve(trainDataset.size() * 60);
+    for (auto &&sample : trainDataset) {
+        std::vector<cv::Mat> augmentedImages = generateAugmentationsPerImage(sample.second, 4);
+        std::cout << "Augmented Dataset, for Image : " << counter++ << std::endl;
+        for (auto &&augmentedImage : augmentedImages) {
+            augmentedTrainDataset.emplace_back(sample.first, augmentedImage);
+            cv::imwrite(labelDirectories[sample.first]+"/"+std::to_string(imgNames[sample.first])+".jpg", augmentedImage);
+            imgNames[sample.first]++;
+        }
+    }
 }
 
 
