@@ -19,7 +19,7 @@ RandomForest::RandomForest(int treeCount, int maxDepth, int CVFolds, int minSamp
         : mTreeCount(treeCount), mMaxDepth(maxDepth), mCVFolds(CVFolds), mMinSampleCount(minSampleCount),
           mMaxCategories(maxCategories) {
 
-    for (int i = 0; i < treeCount; i++){
+    for (int i = 0; i < treeCount; i++) {
         mTrees.push_back(cv::ml::DTrees::create());
         mTrees[i]->setMaxDepth(maxDepth);
         mTrees[i]->setMinSampleCount(minSampleCount);
@@ -35,7 +35,7 @@ void RandomForest::setTreeCount(int treeCount) {
     mTreeCount = treeCount;
 }
 
-int RandomForest::getTreeCount(){
+int RandomForest::getTreeCount() {
     return mTreeCount;
 }
 
@@ -45,7 +45,7 @@ void RandomForest::setMaxDepth(int maxDepth) {
         mTrees[treeIdx]->setMaxDepth(mMaxDepth);
 }
 
-int RandomForest::getMaxDepth(){
+int RandomForest::getMaxDepth() {
     return mMaxDepth;
 }
 
@@ -53,7 +53,7 @@ void RandomForest::setCVFolds(int cvFols) {
     mCVFolds = cvFols;
 }
 
-int RandomForest::getCVFolds(){
+int RandomForest::getCVFolds() {
     return mCVFolds;
 }
 
@@ -61,7 +61,7 @@ void RandomForest::setMinSampleCount(int minSampleCount) {
     mMinSampleCount = minSampleCount;
 }
 
-int RandomForest::getMinSampleCount(){
+int RandomForest::getMinSampleCount() {
     return mMinSampleCount;
 }
 
@@ -69,30 +69,29 @@ void RandomForest::setMaxCategories(int maxCategories) {
     mMaxCategories = maxCategories;
 }
 
-int RandomForest::getMaxCategories(){
+int RandomForest::getMaxCategories() {
     return mMaxCategories;
 }
 
-std::vector<cv::Ptr<cv::ml::DTrees> > RandomForest::getTrees(){
+std::vector<cv::Ptr<cv::ml::DTrees> > RandomForest::getTrees() {
     return mTrees;
 }
 
 
 void
-RandomForest::train(std::vector<std::pair<int, cv::Mat>> trainDataset, float perTreeTrainDatasetSubsetPercentage, cv::Size winStride,
-                    cv::Size padding, bool underSampling, bool dataAugmentation, cv::Size winSize = cv::Size(128, 128)) {
+RandomForest::train(std::vector<std::pair<int, cv::Mat>> trainDataset, float perTreeTrainDatasetSubsetPercentage,
+                    const cv::Size &winStride,
+                    const cv::Size &padding, bool underSampling, bool dataAugmentation,
+                    const cv::Size &winSize = cv::Size(128, 128)) {
     // Augment the dataset
     int counter = 0;
     std::vector<std::pair<int, cv::Mat>> augmentedTrainDataset;
     augmentedTrainDataset.reserve(trainDataset.size() * 60);
-    if (dataAugmentation)
-    {
-        for(auto&& sample : trainDataset)
-        {
+    if (dataAugmentation) {
+        for (auto &&sample : trainDataset) {
             std::vector<cv::Mat> augmentedImages = augmentImage(sample.second);
-            std::cout<< "Augmented Images Iteration : " << counter++ << std::endl;
-            for (auto &&augmentedImage : augmentedImages)
-            {
+            std::cout << "Augmented Images Iteration : " << counter++ << std::endl;
+            for (auto &&augmentedImage : augmentedImages) {
                 augmentedTrainDataset.emplace_back(sample.first, augmentedImage);
             }
         }
@@ -104,26 +103,26 @@ RandomForest::train(std::vector<std::pair<int, cv::Mat>> trainDataset, float per
     std::cout << "Train set size after augmentation : " << augmentedTrainDataset.size() << std::endl;
 
     // Train each decision tree
-    for (size_t i = 0; i < mTreeCount; i++)
-    {
+    for (size_t i = 0; i < mTreeCount; i++) {
         std::cout << "Training Decision Tree: " << i << " - Total Trees : " << mTreeCount << "\n";
         std::vector<std::pair<int, cv::Mat>> subsetOfTrainDataset =
                 trainDatasetSubsetSampler(augmentedTrainDataset,
                                           perTreeTrainDatasetSubsetPercentage,
                                           underSampling);
 
-        cv::Ptr<cv::ml::DTrees> model = trainDecisionTree(subsetOfTrainDataset,
-                                                          winStride,
-                                                          padding,
-                                                          winSize);
+        cv::Ptr<cv::ml::DTrees> model = trainSingleDecisionTree(subsetOfTrainDataset,
+                                                                winStride,
+                                                                padding,
+                                                                winSize, 100, 6);
         mTrees.push_back(model);
     }
 }
 
 //todo
-Prediction RandomForest::predict(cv::Mat &testImage, cv::Size winStride, cv::Size padding, cv::Size winSize = cv::Size(128, 128)) {
+Prediction
+RandomForest::predict(cv::Mat &testImage, cv::Size winStride, cv::Size padding, cv::Size winSize = cv::Size(128, 128)) {
     // Fill
-    cv::Mat resizedInputImage = resizeToBoundingBox(testImage, winSize); //fixme
+    cv::Mat resizedInputImage = imageResize(testImage, winSize); //fixme
 
     // Compute Hog only of center crop of grayscale image
     std::vector<float> descriptors;
@@ -137,8 +136,7 @@ Prediction RandomForest::predict(cv::Mat &testImage, cv::Size winStride, cv::Siz
     //     accuracy += 1;
     std::map<int, int> labelCounts;
     int maxCountLabel = -1;
-    for (auto &&model : mTrees)
-    {
+    for (auto &&model : mTrees) {
         int label = model->predict(cv::Mat(descriptors));
         if (labelCounts.count(label) > 0)
             labelCounts[label]++;
@@ -162,13 +160,11 @@ std::vector<std::pair<int, cv::Mat>> RandomForest::loadTrainDataset() {
     trainDataset.reserve(49 + 67 + 42 + 53 + 67 + 110);
     int trainImagesPerClassCount[6] = {49, 67, 42, 53, 67, 110};
 
-    for (int i = 0; i < 6; i++)
-    {
-        for (size_t j = 0; j < trainImagesPerClassCount[i]; j++)
-        {
+    for (int i = 0; i < 6; i++) {
+        for (size_t j = 0; j < trainImagesPerClassCount[i]; j++) {
             std::stringstream path;
             path << std::string(PROJ_DIR) << "/data/task2/train/" << std::setfill('0') << std::setw(2) << i <<
-            "/" << std::setfill('0') << std::setw(4) << j << ".jpg";
+                 "/" << std::setfill('0') << std::setw(4) << j << ".jpg";
             std::string imagePathStr = path.str();
             std::pair<int, cv::Mat> pair;
             pair.first = i;
@@ -186,13 +182,11 @@ std::vector<std::pair<int, cv::Mat>> RandomForest::loadTestDataset() {
     int testImagesPerClassCount[6] = {10, 10, 10, 10, 10, 10};
     int trainImagesPerClassCount[6] = {49, 67, 42, 53, 67, 110};
 
-    for (int i = 0; i < 6; i++)
-    {
-        for (size_t j = 0; j < testImagesPerClassCount[i]; j++)
-        {
+    for (int i = 0; i < 6; i++) {
+        for (size_t j = 0; j < testImagesPerClassCount[i]; j++) {
             std::stringstream path;
             path << std::string(PROJ_DIR) << "/data/task2/test/" << std::setfill('0') << std::setw(2) << i <<
-            "/" << std::setfill('0') << std::setw(4) << j + trainImagesPerClassCount[i] << ".jpg";
+                 "/" << std::setfill('0') << std::setw(4) << j + trainImagesPerClassCount[i] << ".jpg";
             std::string imagePathStr = path.str();
             std::pair<int, cv::Mat> pair;
             pair.first = i;
@@ -204,102 +198,70 @@ std::vector<std::pair<int, cv::Mat>> RandomForest::loadTestDataset() {
     return testDataset;
 }
 
-//todo
 cv::HOGDescriptor RandomForest::createHogDescriptor(cv::Size size = cv::Size(128, 128)) {
     cv::Size wSize = size;
     cv::Size blockSize(16, 16);
     cv::Size stride(8, 8);
     cv::Size cell(8, 8);
-    int bins(18); // 9 to 18
+    int bins(18);
     int aperture(1);
     double sigma(-1);
-    int normType(cv::HOGDescriptor::L2Hys);
     double l2HysThreshold(0.2);
-    bool gcorrection(true);
-    //! Maximum number of detection window increases. Default value is 64
+    bool gCorrection(true);
     int n_levels(cv::HOGDescriptor::DEFAULT_NLEVELS);
-    //TODO: Observe true
     bool gradient(true);
     cv::HOGDescriptor hog_descriptor(wSize, blockSize, stride, cell, bins, aperture, sigma, cv::HOGDescriptor::L2Hys,
-                                     l2HysThreshold, gcorrection, n_levels, gradient);
-    //TODO: observe copying
+                                     l2HysThreshold, gCorrection, n_levels, gradient);
     mHogDescriptor = hog_descriptor;
     return hog_descriptor;
 }
 
-//todo
 cv::Ptr<cv::ml::DTrees>
-RandomForest::trainDecisionTree(std::vector<std::pair<int, cv::Mat>> &trainingImagesLabelVector, cv::Size winStride,
-                                cv::Size padding, cv::Size winSize = cv::Size(128, 128)) {
-    // Create the model
+RandomForest::trainSingleDecisionTree(std::vector<std::pair<int, cv::Mat>> &trainingImagesLabelVector,
+                                      const cv::Size &winStride, const cv::Size &padding,
+                                      const cv::Size &winSize = cv::Size(128, 128), int maxDepth = 100,
+                                      int maxClasses = 6) {
+    // Model for single tree
     cv::Ptr<cv::ml::DTrees> model = cv::ml::DTrees::create();
-    // See https://docs.opencv.org/3.0-beta/modules/ml/doc/decision_trees.html#dtrees-params
-    model->setCVFolds(0);        // set num cross validation folds - Not implemented in OpenCV
-    model->setMaxCategories(6); // set max number of categories
-    model->setMaxDepth(20);      // set max tree depth
-    model->setMinSampleCount(2); // set min sample count
-    // ToDo - Tweak this
-    // cout << "Number of cross validation folds are: " << model->getCVFolds() << endl;
-    // cout << "Max Categories are: " << model->getMaxCategories() << endl;
-    // cout << "Max depth is: " << model->getMaxDepth() << endl;
-    // cout << "Minimum Sample Count: " << model->getMinSampleCount() << endl;
+    model->setCVFolds(0);
+    model->setMaxCategories(maxClasses);
+    model->setMaxDepth(maxDepth);
+    model->setMinSampleCount(2);
 
-    // Compute Hog Features for all the training images
-    cv::Mat feats, labels;
+    cv::Mat features, labels;
     std::cout << "Size of training set : " << trainingImagesLabelVector.size() << std::endl;
-    for (size_t i = 0; i < trainingImagesLabelVector.size(); i++)
-    {
-        cv::Mat inputImage = trainingImagesLabelVector.at(i).second;
-        cv::Mat resizedInputImage = resizeToBoundingBox(inputImage, winSize); //Fixme
+    for (auto & i : trainingImagesLabelVector) {
+        cv::Mat inputImage = i.second;
+        cv::Mat resizedInputImage = imageResize(inputImage, winSize);
 
-        // Compute Hog only of center crop of grayscale image
         std::vector<float> descriptors;
         std::vector<cv::Point> foundLocations;
-        std::vector<double> weights;
         try {
-            //cv::imshow(&"image " [ i], inputImage);
-            //cv::waitKey(0);
             mHogDescriptor.compute(resizedInputImage, descriptors, winStride, padding, foundLocations);
         } catch (cv::Exception &exception) {
-            std::cout<<"Exception here!!!"<<std::endl;
+            std::cout << "Unable to compute Hog descriptors!!!" << std::endl;
         }
-
-        //mHogDescriptor.compute(resizedInputImage, descriptors, winStride, padding, foundLocations);
-
-        // Store the features and labels for model training.
-        //std::cout << "==" << i << "=====================================" << std::endl;
-        //std::cout << "Number of descriptors are: " << descriptors.size() << std::endl;
-        feats.push_back(cv::Mat(descriptors).clone().reshape(1, 1));
-        //std::cout << "New size of training features" << feats.size() << std::endl;
-        labels.push_back(trainingImagesLabelVector.at(i).first);
-        //std::cout << "New size of training labels" << labels.size() << std::endl;
+        features.push_back(cv::Mat(descriptors).clone().reshape(1, 1));
+        labels.push_back(i.first);
     }
-
-    cv::Ptr<cv::ml::TrainData> trainData = cv::ml::TrainData::create(feats, cv::ml::ROW_SAMPLE, labels);
+    cv::Ptr<cv::ml::TrainData> trainData = cv::ml::TrainData::create(features, cv::ml::ROW_SAMPLE, labels);
     model->train(trainData);
     return model;
 }
 
-//todo
-cv::Mat RandomForest::resizeToBoundingBox(cv::Mat &inputImage, cv::Size size) {
+cv::Mat RandomForest::imageResize(cv::Mat &inputImage, cv::Size size) {
     mWinSize = size;
-    cv::Mat resizedInputImage;
-    if (inputImage.rows < mWinSize.height || inputImage.cols < mWinSize.width)
-    {
+    cv::Mat resizedImage;
+    if (inputImage.rows < mWinSize.height || inputImage.cols < mWinSize.width) {
         float scaleFactor = fmax((mWinSize.height * 1.0f) / inputImage.rows, (mWinSize.width * 1.0f) / inputImage.cols);
-        cv::resize(inputImage, resizedInputImage, cv::Size(0, 0), scaleFactor, scaleFactor, cv::INTER_LINEAR);
-    }
-    else
-    {
-        resizedInputImage = inputImage;
+        cv::resize(inputImage, resizedImage, cv::Size(0, 0), scaleFactor, scaleFactor, cv::INTER_LINEAR);
+    } else {
+        resizedImage = inputImage;
     }
 
-    cv::Rect r = cv::Rect((resizedInputImage.cols - mWinSize.width) / 2, (resizedInputImage.rows - mWinSize.height) / 2,
+    cv::Rect r = cv::Rect((resizedImage.cols - mWinSize.width) / 2, (resizedImage.rows - mWinSize.height) / 2,
                           mWinSize.width, mWinSize.height);
-    // cv::imshow("Resized", resizedInputImage(r));
-    // cv::imshow("Original", inputImage);
-    // cv::waitKey(0);
-    return resizedInputImage(r);
+    return resizedImage(r);
 }
 
 std::vector<std::pair<int, cv::Mat>>
@@ -311,8 +273,7 @@ RandomForest::trainDatasetSubsetSampler(std::vector<std::pair<int, cv::Mat>> &tr
     // A high value to start with
     int minSample = 999999;
 
-    if (underSampling)
-    {
+    if (underSampling) {
         int minSamplesPerClass[mMaxCategories];
         // Initialize each class to 0
         for (size_t i = 0; i < mMaxCategories; i++)
@@ -326,8 +287,7 @@ RandomForest::trainDatasetSubsetSampler(std::vector<std::pair<int, cv::Mat>> &tr
                 minSample = minSamplesPerClass[i];
     }
 
-    for (size_t label = 0; label < mMaxCategories; label++)
-    {
+    for (size_t label = 0; label < mMaxCategories; label++) {
         std::vector<std::pair<int, cv::Mat>> workingSubset;
         workingSubset.reserve(100);
         for (auto &&sample : trainDataset)
@@ -337,12 +297,9 @@ RandomForest::trainDatasetSubsetSampler(std::vector<std::pair<int, cv::Mat>> &tr
         // Number of samples to choose for each label for current subset.
         // Under Sampling maintains class balance
         int numOfElements = 0;
-        if (underSampling)
-        {
+        if (underSampling) {
             numOfElements = (perTreeTrainDatasetSubsetPercentage * minSample) / 100;
-        }
-        else
-        {
+        } else {
             numOfElements = (workingSubset.size() * perTreeTrainDatasetSubsetPercentage) / 100;
         }
 
@@ -355,8 +312,7 @@ RandomForest::trainDatasetSubsetSampler(std::vector<std::pair<int, cv::Mat>> &tr
         std::shuffle(idxs.begin(), idxs.end(), mRandomGenerator);
         std::vector<int> finalIdxs = std::vector<int>(idxs.begin(), idxs.begin() + numOfElements);
 
-        for (int finalIdx : finalIdxs)
-        {
+        for (int finalIdx : finalIdxs) {
             std::pair<int, cv::Mat> subsetSample = workingSubset.at(finalIdx);
             trainDatasetSubset.push_back(subsetSample);
         }
@@ -370,8 +326,7 @@ std::vector<cv::Mat> RandomForest::augmentImage(cv::Mat &inputImage) {
     std::vector<cv::Mat> augmentations;
     cv::Mat currentImage = inputImage;
     cv::Mat rotatedImage, flippedImage;
-    for (size_t j = 0; j < 4; j++)
-    {
+    for (size_t j = 0; j < 4; j++) {
         std::vector<cv::Mat> currentImageAugmentations;
         if (j == 0)
             rotatedImage = currentImage;
@@ -380,8 +335,7 @@ std::vector<cv::Mat> RandomForest::augmentImage(cv::Mat &inputImage) {
         currentImageAugmentations.push_back(rotatedImage);
 
         int numOfRandomRotations = 4;
-        for(size_t i = 0; i < numOfRandomRotations; i++)
-        {
+        for (size_t i = 0; i < numOfRandomRotations; i++) {
             cv::Mat randomlyRotatedImage(rotatedImage.size(), rotatedImage.type());
             cv::RNG rng(time(0));
             RandomRotateImage(rotatedImage, randomlyRotatedImage, 90, 30, 30, cv::Rect(0, 0, 0, 0), rng);
@@ -392,8 +346,7 @@ std::vector<cv::Mat> RandomForest::augmentImage(cv::Mat &inputImage) {
         }
 
         int imagesToFlip = currentImageAugmentations.size();
-        for (int i = 0; i < imagesToFlip; i++)
-        {
+        for (int i = 0; i < imagesToFlip; i++) {
             cv::flip(currentImageAugmentations[i], flippedImage, 0);
             currentImageAugmentations.push_back(flippedImage);
             // cv::Mat dest;
@@ -440,24 +393,23 @@ void RandomForest::saveModel(const std::string &path) {
 
 std::vector<cv::Ptr<cv::ml::DTrees>> RandomForest::loadModel(const std::string &path, int treeCount) {
     std::vector<cv::Ptr<cv::ml::DTrees> > totalTrees;
-    for(size_t i = 0; i < treeCount; i++){
+    for (size_t i = 0; i < treeCount; i++) {
         totalTrees.push_back(cv::ml::DTrees::load(path + '/' + std::to_string(i) + ".tree"));
     }
     return totalTrees;
 }
 
 void RandomForest::trainSingleTree(RandomForest *randomForest,
-                                            std::vector<std::pair<int, cv::Mat>> &trainingImagesLabelVector) {
+                                   std::vector<std::pair<int, cv::Mat>> &trainingImagesLabelVector) {
     cv::Size winSize(128, 128);
     cv::HOGDescriptor hog = randomForest->createHogDescriptor(winSize);
     cv::Size winStride(8, 8);
     cv::Size padding(0, 0);
 
     cv::Mat features, labels;
-    for (auto & i : trainingImagesLabelVector)
-    {
+    for (auto &i : trainingImagesLabelVector) {
         cv::Mat inputImage = i.second;
-        cv::Mat resizedInputImage = randomForest->resizeToBoundingBox(inputImage, winSize);
+        cv::Mat resizedInputImage = randomForest->imageResize(inputImage, winSize);
 
         std::vector<float> descriptors;
         std::vector<cv::Point> foundLocations;
@@ -470,7 +422,7 @@ void RandomForest::trainSingleTree(RandomForest *randomForest,
 
     cv::Ptr<cv::ml::TrainData> trainData = cv::ml::TrainData::create(features, cv::ml::ROW_SAMPLE, labels);
     randomForest->getTrees()[0]->train(trainData);
-    std::cout<< "Single Decision Tree Trained!" << std::endl;
+    std::cout << "Single Decision Tree Trained!" << std::endl;
 }
 
 
@@ -495,9 +447,10 @@ RandomForest::RandomRotateImage(const cv::Mat &src, cv::Mat &dst, float yaw_rang
     dst = rot_img(dst_area).clone();
 }
 
-void RandomForest::ImageRotate(const cv::Mat& src, cv::Mat& dst, float yaw, float pitch, float roll,
-                 float Z = 1000, int interpolation = cv::INTER_LINEAR, int boarder_mode = cv::BORDER_CONSTANT, const cv::Scalar& border_color = cv::Scalar(0, 0, 0))
-{
+void RandomForest::ImageRotate(const cv::Mat &src, cv::Mat &dst, float yaw, float pitch, float roll,
+                               float Z = 1000, int interpolation = cv::INTER_LINEAR,
+                               int boarder_mode = cv::BORDER_CONSTANT,
+                               const cv::Scalar &border_color = cv::Scalar(0, 0, 0)) {
     // rotation matrix
     cv::Mat rotMat_3x4;
     composeExternalMatrix(yaw, pitch, roll, 0, 0, Z, rotMat_3x4);
@@ -511,8 +464,8 @@ void RandomForest::ImageRotate(const cv::Mat& src, cv::Mat& dst, float yaw, floa
     invPerspMat.at<double>(0, 0) = 1;
     invPerspMat.at<double>(1, 1) = 1;
     invPerspMat.at<double>(3, 2) = 1;
-    invPerspMat.at<double>(0, 2) = -(double)src.cols / 2;
-    invPerspMat.at<double>(1, 2) = -(double)src.rows / 2;
+    invPerspMat.at<double>(0, 2) = -(double) src.cols / 2;
+    invPerspMat.at<double>(1, 2) = -(double) src.rows / 2;
 
     // �R�������W����Q�������W�֓����ϊ�
     cv::Mat perspMat = cv::Mat::zeros(3, 4, CV_64FC1);
@@ -531,17 +484,18 @@ void RandomForest::ImageRotate(const cv::Mat& src, cv::Mat& dst, float yaw, floa
     cv::remap(src, dst, map_x, map_y, interpolation, boarder_mode, border_color);
 }
 
-void RandomForest::composeExternalMatrix(float yaw, float pitch, float roll, float trans_x, float trans_y, float trans_z, cv::Mat& external_matrix)
-{
+void
+RandomForest::composeExternalMatrix(float yaw, float pitch, float roll, float trans_x, float trans_y, float trans_z,
+                                    cv::Mat &external_matrix) {
     external_matrix.release();
     external_matrix.create(3, 4, CV_64FC1);
 
-    double sin_yaw = sin((double)yaw * CV_PI / 180);
-    double cos_yaw = cos((double)yaw * CV_PI / 180);
-    double sin_pitch = sin((double)pitch * CV_PI / 180);
-    double cos_pitch = cos((double)pitch * CV_PI / 180);
-    double sin_roll = sin((double)roll * CV_PI / 180);
-    double cos_roll = cos((double)roll * CV_PI / 180);
+    double sin_yaw = sin((double) yaw * CV_PI / 180);
+    double cos_yaw = cos((double) yaw * CV_PI / 180);
+    double sin_pitch = sin((double) pitch * CV_PI / 180);
+    double cos_pitch = cos((double) pitch * CV_PI / 180);
+    double sin_roll = sin((double) roll * CV_PI / 180);
+    double cos_roll = cos((double) roll * CV_PI / 180);
 
     external_matrix.at<double>(0, 0) = cos_pitch * cos_yaw;
     external_matrix.at<double>(0, 1) = -cos_pitch * sin_yaw;
@@ -559,8 +513,7 @@ void RandomForest::composeExternalMatrix(float yaw, float pitch, float roll, flo
 }
 
 
-cv::Mat RandomForest::Rect2Mat(const cv::Rect& img_rect)
-{
+cv::Mat RandomForest::Rect2Mat(const cv::Rect &img_rect) {
     cv::Mat srcCoord(3, 4, CV_64FC1);
     srcCoord.at<double>(0, 0) = img_rect.x;
     srcCoord.at<double>(1, 0) = img_rect.y;
@@ -578,15 +531,18 @@ cv::Mat RandomForest::Rect2Mat(const cv::Rect& img_rect)
     return srcCoord;
 }
 
-void RandomForest::CircumTransImgRect(const cv::Size& img_size, const cv::Mat& transM, cv::Rect_<double>& CircumRect)
-{
+void RandomForest::CircumTransImgRect(const cv::Size &img_size, const cv::Mat &transM, cv::Rect_<double> &CircumRect) {
     cv::Mat cornersMat = Rect2Mat(cv::Rect(0, 0, img_size.width, img_size.height));
 
     cv::Mat dstCoord = transM * cornersMat;
-    double min_x = std::min(dstCoord.at<double>(0, 0) / dstCoord.at<double>(2, 0), dstCoord.at<double>(0, 3) / dstCoord.at<double>(2, 3));
-    double max_x = std::max(dstCoord.at<double>(0, 1) / dstCoord.at<double>(2, 1), dstCoord.at<double>(0, 2) / dstCoord.at<double>(2, 2));
-    double min_y = std::min(dstCoord.at<double>(1, 0) / dstCoord.at<double>(2, 0), dstCoord.at<double>(1, 1) / dstCoord.at<double>(2, 1));
-    double max_y = std::max(dstCoord.at<double>(1, 2) / dstCoord.at<double>(2, 2), dstCoord.at<double>(1, 3) / dstCoord.at<double>(2, 3));
+    double min_x = std::min(dstCoord.at<double>(0, 0) / dstCoord.at<double>(2, 0),
+                            dstCoord.at<double>(0, 3) / dstCoord.at<double>(2, 3));
+    double max_x = std::max(dstCoord.at<double>(0, 1) / dstCoord.at<double>(2, 1),
+                            dstCoord.at<double>(0, 2) / dstCoord.at<double>(2, 2));
+    double min_y = std::min(dstCoord.at<double>(1, 0) / dstCoord.at<double>(2, 0),
+                            dstCoord.at<double>(1, 1) / dstCoord.at<double>(2, 1));
+    double max_y = std::max(dstCoord.at<double>(1, 2) / dstCoord.at<double>(2, 2),
+                            dstCoord.at<double>(1, 3) / dstCoord.at<double>(2, 3));
 
     CircumRect.x = min_x;
     CircumRect.y = min_y;
@@ -594,34 +550,33 @@ void RandomForest::CircumTransImgRect(const cv::Size& img_size, const cv::Mat& t
     CircumRect.height = max_y - min_y;
 }
 
-void RandomForest::CreateMap(const cv::Size& src_size, const cv::Rect_<double>& dst_rect, const cv::Mat& transMat, cv::Mat& map_x, cv::Mat& map_y)
-{
+void RandomForest::CreateMap(const cv::Size &src_size, const cv::Rect_<double> &dst_rect, const cv::Mat &transMat,
+                             cv::Mat &map_x, cv::Mat &map_y) {
     map_x.create(dst_rect.size(), CV_32FC1);
     map_y.create(dst_rect.size(), CV_32FC1);
 
     double Z = transMat.at<double>(2, 3);
 
-    cv::Mat invTransMat = transMat.inv();	// �t�s��
-    cv::Mat dst_pos(3, 1, CV_64FC1);	// �o�͉摜��̍��W
+    cv::Mat invTransMat = transMat.inv();    // �t�s��
+    cv::Mat dst_pos(3, 1, CV_64FC1);    // �o�͉摜��̍��W
     dst_pos.at<double>(2, 0) = Z;
-    for (int dy = 0; dy<map_x.rows; dy++){
+    for (int dy = 0; dy < map_x.rows; dy++) {
         dst_pos.at<double>(1, 0) = dst_rect.y + dy;
-        for (int dx = 0; dx<map_x.cols; dx++){
+        for (int dx = 0; dx < map_x.cols; dx++) {
             dst_pos.at<double>(0, 0) = dst_rect.x + dx;
             cv::Mat rMat = -invTransMat(cv::Rect(3, 2, 1, 1)) / (invTransMat(cv::Rect(0, 2, 3, 1)) * dst_pos);
             cv::Mat src_pos = invTransMat(cv::Rect(0, 0, 3, 2)) * dst_pos * rMat + invTransMat(cv::Rect(3, 0, 1, 2));
-            map_x.at<float>(dy, dx) = src_pos.at<double>(0, 0) + (float)src_size.width / 2;
-            map_y.at<float>(dy, dx) = src_pos.at<double>(1, 0) + (float)src_size.height / 2;
+            map_x.at<float>(dy, dx) = src_pos.at<double>(0, 0) + (float) src_size.width / 2;
+            map_y.at<float>(dy, dx) = src_pos.at<double>(1, 0) + (float) src_size.height / 2;
         }
     }
 }
 
 // Keep center and expand rectangle for rotation
-cv::Rect RandomForest::ExpandRectForRotate(const cv::Rect& area)
-{
+cv::Rect RandomForest::ExpandRectForRotate(const cv::Rect &area) {
     cv::Rect exp_rect;
 
-    int w = cvRound(std::sqrt((double)(area.width * area.width + area.height * area.height)));
+    int w = cvRound(std::sqrt((double) (area.width * area.width + area.height * area.height)));
 
     exp_rect.width = w;
     exp_rect.height = w;

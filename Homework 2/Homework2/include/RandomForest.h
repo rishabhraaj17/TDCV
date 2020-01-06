@@ -43,8 +43,8 @@ public:
 
 
     void
-    train(std::vector<std::pair<int, cv::Mat>> trainDataset, float perTreeTrainDatasetSubsetPercentage, cv::Size winStride,
-          cv::Size padding, bool underSampling, bool dataAugmentation, cv::Size winSize);
+    train(std::vector<std::pair<int, cv::Mat>> trainDataset, float perTreeTrainDatasetSubsetPercentage, const cv::Size& winStride,
+          const cv::Size& padding, bool underSampling, bool dataAugmentation, const cv::Size& winSize);
 
     Prediction predict(cv::Mat &testImage, cv::Size winStride, cv::Size padding, cv::Size winSize);
 
@@ -67,7 +67,7 @@ public:
 
     cv::HOGDescriptor createHogDescriptor(cv::Size size);
 
-    cv::Mat resizeToBoundingBox(cv::Mat &inputImage, cv::Size size);
+    cv::Mat imageResize(cv::Mat &inputImage, cv::Size size);
 
     std::vector<cv::Ptr<cv::ml::DTrees>> getTrees();
 
@@ -93,10 +93,10 @@ private:
 
     std::vector<cv::Ptr<cv::ml::DTrees> > mTrees;
 
-    cv::Ptr<cv::ml::DTrees> trainDecisionTree(std::vector<std::pair<int, cv::Mat>> &trainingImagesLabelVector,
-                                              cv::Size winStride,
-                                              cv::Size padding,
-                                              cv::Size winSize);
+    cv::Ptr<cv::ml::DTrees> trainSingleDecisionTree(std::vector<std::pair<int, cv::Mat>> &trainingImagesLabelVector,
+                                                    const cv::Size &winStride, const cv::Size &padding,
+                                                    const cv::Size &winSize,
+                                                    int maxDepth, int maxClasses);
 
     std::vector<std::pair<int, cv::Mat>>
     trainDatasetSubsetSampler(std::vector<std::pair<int, cv::Mat>> &trainDataset,

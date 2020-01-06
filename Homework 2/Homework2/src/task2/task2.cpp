@@ -39,7 +39,7 @@ singleDecisionTreeClassifier(int num_classes = 6,
     // int j = 0;
     for (auto &i : testDataset) {
         cv::Mat inputImage = i.second;
-        cv::Mat resizedInputImage = randomForest->resizeToBoundingBox(inputImage, winSize);
+        cv::Mat resizedInputImage = randomForest->imageResize(inputImage, winSize);
 
         // Compute Hog Descriptors
         vector<float> descriptors;
