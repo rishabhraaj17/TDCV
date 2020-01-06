@@ -202,6 +202,7 @@ cv::HOGDescriptor & HOGDescriptor::getHog_detector() {
     return hog_detector;
 }
 
+// fixme can remove it. better to
 cv::Mat HOGDescriptor::resizeToBoundingBox(cv::Mat &inputImage, cv::Size &winSize)
 {
     cv::Mat resizedInputImage;

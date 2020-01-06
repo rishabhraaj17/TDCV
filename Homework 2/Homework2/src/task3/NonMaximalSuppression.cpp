@@ -7,7 +7,7 @@
 #include <boost/filesystem.hpp>
 #include <opencv2/core/utils/filesystem.hpp>
 
-// #define DISPLAY
+#define DISPLAY
 
 std::vector<std::pair<int, cv::Mat>> NonMaximalSuppression::loadTrainDataset() {
     std::vector<std::pair<int, cv::Mat>> labelImagesTrain;
@@ -210,7 +210,7 @@ NonMaximalSuppression::precisionRecallNMS(std::string outputDir, std::vector<std
         cv::Mat testImageClone = testImage.clone(); // For drawing bbox
         for (auto &&prediction : predictionsVector)
         {
-            cv::rectangle(testImageClone, prediction.bbox, gtColors[prediction.label]);
+            cv::rectangle(testImageClone, prediction.boundingBox, gtColors[prediction.label]);
         }
         cv::imshow("TestImageOutput", testImageClone);
         cv::waitKey(100);
@@ -288,7 +288,7 @@ NonMaximalSuppression::precisionRecallNMS(std::string outputDir, std::vector<std
         // Display all ground truth boxes
         cv::Mat testImageGtClone = testImage.clone(); // For drawing bbox
         for (size_t j = 0; j < groundTruthPredictions.size(); j++)
-            cv::rectangle(testImageGtClone, groundTruthPredictions.at(j).bbox, gtColors[groundTruthPredictions.at(j).label]);
+            cv::rectangle(testImageGtClone, groundTruthPredictions.at(j).boundingBox, gtColors[groundTruthPredictions.at(j).label]);
         cv::imshow("Ground Truth", testImageGtClone);
         cv::waitKey(500);
 #endif
@@ -486,7 +486,7 @@ void NonMaximalSuppression::solver(float subsetPercentage = 50.0f,
 
     // Create model
     int numberOfClasses = 4;
-    int numberOfDTrees = 1;
+    int numberOfDTrees = 60;
     cv::Size winSize(128, 128);
     cv::Ptr<RandomForest> randomForest = RandomForest::createRandomForest(numberOfClasses, numberOfDTrees, winSize);
 
