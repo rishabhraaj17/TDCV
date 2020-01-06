@@ -39,7 +39,7 @@ public:
 
     void
     train(std::vector<std::pair<int, cv::Mat>> trainDataset, float perTreeTrainDatasetSubsetPercentage, const cv::Size& winStride,
-          const cv::Size& padding, bool underSampling, bool dataAugmentation, const cv::Size& winSize);
+          const cv::Size& padding, bool underSampling, bool dataAugmentation, const cv::Size& winSize, bool usePreAugmentedDataset = true);
 
     ModelPrediction predictPerImage(cv::Mat &testImage, cv::Size winStride, cv::Size padding, cv::Size winSize);
 

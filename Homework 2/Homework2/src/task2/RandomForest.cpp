@@ -82,19 +82,26 @@ void
 RandomForest::train(std::vector<std::pair<int, cv::Mat>> trainDataset, float perTreeTrainDatasetSubsetPercentage,
                     const cv::Size &winStride,
                     const cv::Size &padding, bool underSampling, bool dataAugmentation,
-                    const cv::Size &winSize = cv::Size(128, 128)) {
+                    const cv::Size &winSize = cv::Size(128, 128),
+                    bool usePreAugmentedDataset) {
     // Augment the dataset
     int counter = 0;
     std::vector<std::pair<int, cv::Mat>> augmentedTrainDataset;
     augmentedTrainDataset.reserve(trainDataset.size() * 60);
     if (dataAugmentation) {
-        for (auto &&sample : trainDataset) {
-            std::vector<cv::Mat> augmentedImages = generateAugmentationsPerImage(sample.second, 4);
-            std::cout << "Augmented Dataset, for Image : " << counter++ << std::endl;
-            for (auto &&augmentedImage : augmentedImages) {
-                augmentedTrainDataset.emplace_back(sample.first, augmentedImage);
+        if (usePreAugmentedDataset){
+            std::cout << "Loading Augmented Dataset!"  << std::endl;
+            augmentedTrainDataset = loadAugmentedTrainDataset();
+        } else {
+            for (auto &&sample : trainDataset) {
+                std::vector<cv::Mat> augmentedImages = generateAugmentationsPerImage(sample.second, 4);
+                std::cout << "Augmenting Dataset, for Image : " << counter++ << std::endl;
+                for (auto &&augmentedImage : augmentedImages) {
+                    augmentedTrainDataset.emplace_back(sample.first, augmentedImage);
+                }
             }
         }
+
     } else {
         augmentedTrainDataset = trainDataset;
     }
