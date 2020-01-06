@@ -90,8 +90,8 @@ std::vector<std::vector<std::vector<int>>> NonMaximalSuppression::getLabelAndBou
     return groundTruthBoundingBoxes;
 }
 
-std::vector<float> NonMaximalSuppression::computeTpFpFn(std::vector<Prediction> predictionsNMSVector,
-                                                        std::vector<Prediction> groundTruthPredictions) {
+std::vector<float> NonMaximalSuppression::computeTpFpFn(std::vector<ModelPrediction> predictionsNMSVector,
+                                                        std::vector<ModelPrediction> groundTruthPredictions) {
     float tp = 0, fp = 0, fn = 0;
     float matchThresholdIou = 0.5f;
 
@@ -170,10 +170,10 @@ NonMaximalSuppression::precisionRecallNMS(std::string outputDir, std::vector<std
         // Ignore the ground truth data in predictions.txt. we already have it.
         int tmp, tmp1;
         predictionsFile >> tmp; // Ignore - number of ground truth
-        std::vector<Prediction> groundTruthPredictions;
+        std::vector<ModelPrediction> groundTruthPredictions;
         for (size_t j = 0; j < tmp; j++)
         {
-            Prediction groundTruthPrediction;
+            ModelPrediction groundTruthPrediction;
             groundTruthPrediction.label = labelAndBoundingBoxes.at(i).at(j).at(0);
             groundTruthPrediction.boundingBox.x = labelAndBoundingBoxes.at(i).at(j).at(1);
             groundTruthPrediction.boundingBox.y = labelAndBoundingBoxes.at(i).at(j).at(2);
@@ -192,13 +192,13 @@ NonMaximalSuppression::precisionRecallNMS(std::string outputDir, std::vector<std
 
         // Read prediction data
         cv::Mat testImage = testImagesLabelVector.at(i).second;
-        std::vector<Prediction> predictionsVector; // Output of Hog Detection on ith test image
+        std::vector<ModelPrediction> predictionsVector; // Output of Hog Detection on ith test image
         int numOfPredictions;
         predictionsFile >> numOfPredictions;
         predictionsVector.reserve(numOfPredictions);
         for (size_t i = 0; i < numOfPredictions; i++)
         {
-            Prediction prediction;
+            ModelPrediction prediction;
             predictionsFile >> prediction.label;
             predictionsFile >> prediction.boundingBox.x >> prediction.boundingBox.y >> prediction.boundingBox.height >> prediction.boundingBox.width;
             predictionsFile >> prediction.confidence;
@@ -219,11 +219,11 @@ NonMaximalSuppression::precisionRecallNMS(std::string outputDir, std::vector<std
         // Apply NonMaximal Suppression
         cv::Mat testImageNms1Clone = testImage.clone(); // For drawing bbox
         cv::Mat testImageNmsClone = testImage.clone();  // For drawing bbox
-        std::vector<Prediction> predictionsNMSVector;
+        std::vector<ModelPrediction> predictionsNMSVector;
         predictionsNMSVector.reserve(20); // 20 should be enough.
 
         // Ignore boxes with low threshold.
-        std::vector<Prediction>::iterator iter;
+        std::vector<ModelPrediction>::iterator iter;
         for (iter = predictionsVector.begin(); iter != predictionsVector.end(); ) {
             if (iter->confidence < NMS_CONFIDENCE_THRESHOLD)
                 iter = predictionsVector.erase(iter);
@@ -412,7 +412,7 @@ void NonMaximalSuppression::computeBoundingBoxAndConfidence(cv::Ptr<RandomForest
         maxBoundingBoxSideLength += 10;
 
         int boundingBoxSideLength = minBoundingBoxSideLength;
-        std::vector<Prediction> predictionsVector; // Output of Hog Detection
+        std::vector<ModelPrediction> predictionsVector; // Output of Hog Detection
         while (true)
         {
             std::cout << "Processing at bounding box side length: " << boundingBoxSideLength << '\n';
@@ -425,7 +425,7 @@ void NonMaximalSuppression::computeBoundingBoxAndConfidence(cv::Ptr<RandomForest
                     cv::Mat rectImage = testImage(rect);
 
                     // Predict on subimage
-                    Prediction prediction = randomForest->predict(rectImage, winStride, padding, winSize);
+                    ModelPrediction prediction = randomForest->predictPerImage(rectImage, winStride, padding, winSize);
                     if (prediction.label != 3) // Ignore Background class.
                     {
                         prediction.boundingBox = rect;

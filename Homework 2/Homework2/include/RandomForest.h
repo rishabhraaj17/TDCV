@@ -11,17 +11,12 @@
 #include <random>
 #include "HOGDescriptor.h"
 
-struct Prediction {
+struct ModelPrediction {
     int label;
     float confidence;
     cv::Rect boundingBox;
 };
 
-struct GreaterThan {
-    inline bool operator()(const Prediction &struct1, const Prediction &struct2) {
-        return (struct1.confidence < struct2.confidence);
-    }
-};
 
 class RandomForest {
 public:
@@ -46,7 +41,7 @@ public:
     train(std::vector<std::pair<int, cv::Mat>> trainDataset, float perTreeTrainDatasetSubsetPercentage, const cv::Size& winStride,
           const cv::Size& padding, bool underSampling, bool dataAugmentation, const cv::Size& winSize);
 
-    Prediction predict(cv::Mat &testImage, cv::Size winStride, cv::Size padding, cv::Size winSize);
+    ModelPrediction predictPerImage(cv::Mat &testImage, cv::Size winStride, cv::Size padding, cv::Size winSize);
 
     std::vector<std::pair<int, cv::Mat>> loadTrainDataset();
 

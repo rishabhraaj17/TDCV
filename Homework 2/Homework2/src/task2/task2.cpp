@@ -46,7 +46,7 @@ singleDecisionTreeClassifier(int num_classes = 6,
         vector<cv::Point> foundLocations;
         hogDescriptor.compute(resizedInputImage, descriptors, winStride, padding, foundLocations);
 
-        // cout << j++ << ": Expected: " << i.first << ", Found: " << randomForest->getTrees()[0]->predict(cv::Mat(descriptors)) << endl ;
+        // cout << j++ << ": Expected: " << i.first << ", Found: " << randomForest->getTrees()[0]->predictPerImage(cv::Mat(descriptors)) << endl ;
         if (i.first == randomForest->getTrees()[0]->predict(cv::Mat(descriptors)))
             accuracy += 1;
     }
@@ -82,7 +82,7 @@ void randomForestClassifier(int numberOfClasses = 6,
     float accuracyPerClass[6] = {0};
     for (size_t i = 0; i < testDataset.size(); i++) {
         cv::Mat testImage = testDataset.at(i).second;
-        Prediction prediction = randomForest->predict(testImage, winStride, padding, winSize);
+        ModelPrediction prediction = randomForest->predictPerImage(testImage, winStride, padding, winSize);
         if (testDataset.at(i).first == prediction.label) {
             accuracy += 1;
             accuracyPerClass[prediction.label] += 1;

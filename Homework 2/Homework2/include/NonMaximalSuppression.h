@@ -22,8 +22,8 @@ public:
 
     std::vector<std::vector<std::vector<int>>> getLabelAndBoundingBoxes();
 
-    std::vector<float> computeTpFpFn(std::vector<Prediction> predictionsNMSVector,
-                                     std::vector<Prediction> groundTruthPredictions);
+    std::vector<float> computeTpFpFn(std::vector<ModelPrediction> predictionsNMSVector,
+                                     std::vector<ModelPrediction> groundTruthPredictions);
 
     std::vector<float> precisionRecallNMS(std::string outputDir,
                                           std::vector<std::pair<int, cv::Mat>> &testImagesLabelVector,

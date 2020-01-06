@@ -118,40 +118,33 @@ RandomForest::train(std::vector<std::pair<int, cv::Mat>> trainDataset, float per
     }
 }
 
-//todo
-Prediction
-RandomForest::predict(cv::Mat &testImage, cv::Size winStride, cv::Size padding, cv::Size winSize = cv::Size(128, 128)) {
-    // Fill
-    cv::Mat resizedInputImage = imageResize(testImage, winSize); //fixme
+ModelPrediction
+RandomForest::predictPerImage(cv::Mat &testImage, cv::Size winStride, cv::Size padding, cv::Size winSize = cv::Size(128,
+                                                                                                                    128)) {
+    cv::Mat resizedImage = imageResize(testImage, winSize);
 
-    // Compute Hog only of center crop of grayscale image
     std::vector<float> descriptors;
     std::vector<cv::Point> foundLocations;
-    std::vector<double> weights;
-    mHogDescriptor.compute(resizedInputImage, descriptors, winStride, padding, foundLocations);
+    mHogDescriptor.compute(resizedImage, descriptors, winStride, padding, foundLocations);
 
-    // Store the features and labels for model training.
-    // cout << i << ": Expected: " << testImagesLabelVector.at(i).first << ", Found: " << model->predict(cv::Mat(descriptors)) << endl ;
-    // if(testImagesLabelVector.at(i).first == randomForest.at(0)->predict(cv::Mat(descriptors)))
-    //     accuracy += 1;
-    std::map<int, int> labelCounts;
-    int maxCountLabel = -1;
+    // Predictions from all the models
+    std::map<int, int> predictedLabels;
+    int finalPrediction = -1;
     for (auto &&model : mTrees) {
         int label = model->predict(cv::Mat(descriptors));
-        if (labelCounts.count(label) > 0)
-            labelCounts[label]++;
+        if (predictedLabels.count(label) > 0)
+            predictedLabels[label]++;
         else
-            labelCounts[label] = 1;
+            predictedLabels[label] = 1;
 
-        if (maxCountLabel == -1)
-            maxCountLabel = label;
-        else if (labelCounts[label] > labelCounts[maxCountLabel])
-            maxCountLabel = label;
+        if (finalPrediction == -1)
+            finalPrediction = label;
+        else if (predictedLabels[label] > predictedLabels[finalPrediction])
+            finalPrediction = label;
     }
 
-    return Prediction{.label = maxCountLabel,
-            .confidence = (labelCounts[maxCountLabel] * 1.0f) / mTreeCount};
-
+    return ModelPrediction{.label = finalPrediction,
+            .confidence = (predictedLabels[finalPrediction] * 1.0f) / mTreeCount};
 }
 
 std::vector<std::pair<int, cv::Mat>> RandomForest::loadTrainDataset() {
