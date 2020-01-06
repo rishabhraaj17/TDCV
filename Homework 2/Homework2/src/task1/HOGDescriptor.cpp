@@ -5,34 +5,26 @@
 #include "../../include/HOGDescriptor.h"
 #include <iostream>
 
-void HOGDescriptor::initDetector() {
-    // Initialize hog detector
-    
-    //Fill code here
-
-    // if change of params init
+void HOGDescriptor::createHogDescriptor() {
     cv::Size size(128, 128);
     cv::Size stride(8, 8);
     cv::Size cell(8, 8);
     int bins(9);
     int aperture(1);
     double sigma(-1);
-    int normType(cv::HOGDescriptor::L2Hys);
     double l2HysThreshold(0.2);
-    bool gcorrection(true);
-    //! Maximum number of detection window increases. Default value is 64
+    bool g_correction(true);
     int n_levels(cv::HOGDescriptor::DEFAULT_NLEVELS);
     bool gradient(false);
     cv::HOGDescriptor hogDescriptor(size, blockSize, stride, cell, bins, aperture, sigma, cv::HOGDescriptor::L2Hys,
-                                    l2HysThreshold, gcorrection, n_levels, gradient);
+                                    l2HysThreshold, g_correction, n_levels, gradient);
 
     hog_detector = hogDescriptor;
     is_init = true;
 }
 
 
-void HOGDescriptor::visualizeHOG(cv::Mat img, std::vector<float> &feats, cv::HOGDescriptor hog_detector, int scale_factor) {
-    // Fill code here (already provided)
+void HOGDescriptor::visualizeHOG(cv::Mat img, std::vector<float> &feats, cv::HOGDescriptor &hog_detector, int scale_factor) {
 
     cv::Mat visual_image;
     resize(img, visual_image, cv::Size(img.cols * scale_factor, img.rows * scale_factor));
@@ -170,53 +162,23 @@ void HOGDescriptor::visualizeHOG(cv::Mat img, std::vector<float> &feats, cv::HOG
 
 void HOGDescriptor::detectHOGDescriptor(cv::Mat &im, std::vector<float> &feat, cv::Size sz, bool show) {
     if (!is_init) {
-        initDetector();
+        createHogDescriptor();
     }
 
-   // Fill code here
-
-   /* pad your image
-    * resize your image
-    * use the built in function "compute" to get the HOG descriptors
-    */
    // vector of found locations returned by compute
    std::vector<cv::Point> foundLocations;
    // resize the image
-   // Way 1 : looks like pdf
-   //cv::resize(im, img_resized, sz, 0, 0, cv::INTER_AREA);
-   // Way 2 : Looks diiferent than pdf sample. TODO: decide
+   cv::resize(im, img_resized, sz, 0, 0, cv::INTER_AREA);
    cv::Size w_size(128, 128);
-   img_resized = resizeToBoundingBox(im, w_size);
    // convert to grayscale
    cv::cvtColor(img_resized, img_gray, cv::COLOR_BGR2GRAY);
    // compute the descriptors
-   hog_detector.compute(img_resized, feat, cv::Size(8, 8), cv::Size(0, 0), foundLocations);
+   hog_detector.compute(img_resized, feat, cv::Size(8, 8), cv::Size(10, 10), foundLocations);
    if (show) {
        visualizeHOG(img_resized, feat, hog_detector, 6);
    }
 }
 
-//returns instance of cv::HOGDescriptor
 cv::HOGDescriptor & HOGDescriptor::getHog_detector() {
-    // Fill code here
     return hog_detector;
-}
-
-// fixme can remove it. better to
-cv::Mat HOGDescriptor::resizeToBoundingBox(cv::Mat &inputImage, cv::Size &winSize)
-{
-    cv::Mat resizedInputImage;
-    if (inputImage.rows < winSize.height || inputImage.cols < winSize.width)
-    {
-        float scaleFactor = fmax((winSize.height * 1.0f) / inputImage.rows, (winSize.width * 1.0f) / inputImage.cols);
-        cv::resize(inputImage, resizedInputImage, cv::Size(0, 0), scaleFactor, scaleFactor, cv::INTER_LINEAR);
-    }
-    else
-    {
-        resizedInputImage = inputImage;
-    }
-
-    cv::Rect r = cv::Rect((resizedInputImage.cols - winSize.width) / 2, (resizedInputImage.rows - winSize.height) / 2,
-                  winSize.width, winSize.height);
-    return resizedInputImage(r);
 }

@@ -8,16 +8,6 @@
 
 int main(){
     cv::Mat im = cv::imread("../data/task1/obj1000.jpg");
-    /*cv::imshow("image", im);
-    cv::waitKey(0);*/
-	//Fill Code here
-
-    /*
-    	* Create instance of HOGDescriptor and initialize
-    	* Compute HOG descriptors
-    	* visualize
-    */
-
     std::vector<float> descriptors;
 
     HOGDescriptor hogDescriptor;
