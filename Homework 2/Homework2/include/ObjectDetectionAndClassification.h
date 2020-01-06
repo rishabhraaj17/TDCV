@@ -2,19 +2,19 @@
 // Created by rishabh on 02.01.20.
 //
 
-#ifndef HOMEWORK2_NONMAXIMALSUPPRESSION_H
-#define HOMEWORK2_NONMAXIMALSUPPRESSION_H
+#ifndef HOMEWORK2_OBJECTDETECTIONANDCLASSIFICATION_H
+#define HOMEWORK2_OBJECTDETECTIONANDCLASSIFICATION_H
 
 
 #include <vector>
 #include <opencv2/core/mat.hpp>
 #include "RandomForest.h"
 
-class NonMaximalSuppression {
+class ObjectDetectionAndClassification {
 public:
-    NonMaximalSuppression();
+    ObjectDetectionAndClassification();
 
-    NonMaximalSuppression(float max, float min, float confidence);
+    ObjectDetectionAndClassification(float max, float min, float confidence);
 
     std::vector<std::pair<int, cv::Mat>> loadTrainDataset();
 
@@ -51,7 +51,7 @@ public:
                 bool underSampling,
                 bool augment);
 
-    ~NonMaximalSuppression();
+    ~ObjectDetectionAndClassification();
 
     float NMS_MIN_IOU_THRESHOLD = 0.1f;
     float NMS_MAX_IOU_THRESHOLD = 0.5f;
@@ -59,4 +59,4 @@ public:
 };
 
 
-#endif //HOMEWORK2_NONMAXIMALSUPPRESSION_H
+#endif //HOMEWORK2_OBJECTDETECTIONANDCLASSIFICATION_H

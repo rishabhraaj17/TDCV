@@ -3,13 +3,13 @@
 //
 
 #include <sys/ioctl.h>
-#include "NonMaximalSuppression.h"
+#include "ObjectDetectionAndClassification.h"
 #include <boost/filesystem.hpp>
 #include <opencv2/core/utils/filesystem.hpp>
 
 #define DISPLAY
 
-std::vector<std::pair<int, cv::Mat>> NonMaximalSuppression::loadTrainDataset() {
+std::vector<std::pair<int, cv::Mat>> ObjectDetectionAndClassification::loadTrainDataset() {
     std::vector<std::pair<int, cv::Mat>> labelImagesTrain;
     labelImagesTrain.reserve(53 + 81 + 51 + 290);
     int numberOfTrainImages[6] = {53, 81, 51, 290};
@@ -33,7 +33,7 @@ std::vector<std::pair<int, cv::Mat>> NonMaximalSuppression::loadTrainDataset() {
     return labelImagesTrain;
 }
 
-std::vector<std::pair<int, cv::Mat>> NonMaximalSuppression::loadTestDataset() {
+std::vector<std::pair<int, cv::Mat>> ObjectDetectionAndClassification::loadTestDataset() {
     std::vector<std::pair<int, cv::Mat>> labelImagesTest;
     labelImagesTest.reserve(44);
     int numberOfTestImages[1] = {44};
@@ -54,7 +54,7 @@ std::vector<std::pair<int, cv::Mat>> NonMaximalSuppression::loadTestDataset() {
     return labelImagesTest;
 }
 
-std::vector<std::vector<std::vector<int>>> NonMaximalSuppression::getLabelAndBoundingBoxes() {
+std::vector<std::vector<std::vector<int>>> ObjectDetectionAndClassification::getLabelAndBoundingBoxes() {
     int numberOfTestImages = 44;
     std::vector<std::vector<std::vector<int>>> groundTruthBoundingBoxes;
     for (size_t j = 0; j < numberOfTestImages; j++)
@@ -90,8 +90,8 @@ std::vector<std::vector<std::vector<int>>> NonMaximalSuppression::getLabelAndBou
     return groundTruthBoundingBoxes;
 }
 
-std::vector<float> NonMaximalSuppression::computeTpFpFn(std::vector<ModelPrediction> predictionsNMSVector,
-                                                        std::vector<ModelPrediction> groundTruthPredictions) {
+std::vector<float> ObjectDetectionAndClassification::computeTpFpFn(std::vector<ModelPrediction> predictionsNMSVector,
+                                                                   std::vector<ModelPrediction> groundTruthPredictions) {
     float tp = 0, fp = 0, fn = 0;
     float matchThresholdIou = 0.5f;
 
@@ -148,10 +148,10 @@ std::vector<float> NonMaximalSuppression::computeTpFpFn(std::vector<ModelPredict
 }
 
 std::vector<float>
-NonMaximalSuppression::precisionRecallNMS(std::string outputDir, std::vector<std::pair<int, cv::Mat>> &testImagesLabelVector,
-                                          std::vector<std::vector<std::vector<int>>> &labelAndBoundingBoxes, cv::Scalar *gtColors,
-                                          float NMS_MIN_IOU_THRESHOLD, float NMS_MAX_IOU_THRESHOLD,
-                                          float NMS_CONFIDENCE_THRESHOLD) {
+ObjectDetectionAndClassification::precisionRecallNMS(std::string outputDir, std::vector<std::pair<int, cv::Mat>> &testImagesLabelVector,
+                                                     std::vector<std::vector<std::vector<int>>> &labelAndBoundingBoxes, cv::Scalar *gtColors,
+                                                     float NMS_MIN_IOU_THRESHOLD, float NMS_MAX_IOU_THRESHOLD,
+                                                     float NMS_CONFIDENCE_THRESHOLD) {
     std::ifstream predictionsFile(outputDir + "predictions.txt");
     if (!predictionsFile.is_open())
     {
@@ -322,15 +322,15 @@ NonMaximalSuppression::precisionRecallNMS(std::string outputDir, std::vector<std
     return std::vector<float>();
 }
 
-NonMaximalSuppression::NonMaximalSuppression(float max, float min, float confidence) {
+ObjectDetectionAndClassification::ObjectDetectionAndClassification(float max, float min, float confidence) {
     this->NMS_MAX_IOU_THRESHOLD = max;
     this->NMS_MIN_IOU_THRESHOLD = min;
     this->NMS_CONFIDENCE_THRESHOLD = confidence;
 }
 
-void NonMaximalSuppression::evaluate_metrics(std::string outputDir,
-                                             std::vector<std::pair<int, cv::Mat>> &testImagesLabelVector,
-                                             std::vector<std::vector<std::vector<int>>> &labelAndBoundingBoxes) {
+void ObjectDetectionAndClassification::evaluate_metrics(std::string outputDir,
+                                                        std::vector<std::pair<int, cv::Mat>> &testImagesLabelVector,
+                                                        std::vector<std::vector<std::vector<int>>> &labelAndBoundingBoxes) {
     cv::Scalar gtColors[4];
     gtColors[0] = cv::Scalar(255, 0, 0);
     gtColors[1] = cv::Scalar(0, 255, 0);
@@ -373,13 +373,13 @@ void NonMaximalSuppression::evaluate_metrics(std::string outputDir,
     std::cout << "\n";
 }
 
-void NonMaximalSuppression::computeBoundingBoxAndConfidence(cv::Ptr<RandomForest> &randomForest,
-                                                            std::vector<std::pair<int, cv::Mat>> &testImagesLabelVector,
-                                                            std::vector<std::vector<std::vector<int>>> &labelAndBoundingBoxes,
-                                                            int strideX, int strideY, cv::Size winStride,
-                                                            cv::Size padding, cv::Scalar *gtColors, float scaleFactor,
-                                                            std::string outputDir,
-                                                            cv::Size winSize = cv::Size(128, 128)) {
+void ObjectDetectionAndClassification::computeBoundingBoxAndConfidence(cv::Ptr<RandomForest> &randomForest,
+                                                                       std::vector<std::pair<int, cv::Mat>> &testImagesLabelVector,
+                                                                       std::vector<std::vector<std::vector<int>>> &labelAndBoundingBoxes,
+                                                                       int strideX, int strideY, cv::Size winStride,
+                                                                       cv::Size padding, cv::Scalar *gtColors, float scaleFactor,
+                                                                       std::string outputDir,
+                                                                       cv::Size winSize = cv::Size(128, 128)) {
     std::ofstream predictionsFile(outputDir + "predictions.txt");
     if (!predictionsFile.is_open())
     {
@@ -478,15 +478,15 @@ void NonMaximalSuppression::computeBoundingBoxAndConfidence(cv::Ptr<RandomForest
     predictionsFile.close();
 }
 
-void NonMaximalSuppression::solver(float subsetPercentage = 50.0f,
-                                   bool underSampling = false,
-                                   bool augment = true) {
+void ObjectDetectionAndClassification::solver(float subsetPercentage = 50.0f,
+                                              bool underSampling = false,
+                                              bool augment = true) {
     std::vector<std::pair<int, cv::Mat>> trainingImagesLabelVector = loadTrainDataset();
     std::vector<std::vector<std::vector<int>>> labelAndBoundingBoxes = getLabelAndBoundingBoxes();
 
     // Create model
     int numberOfClasses = 4;
-    int numberOfDTrees = 60;
+    int numberOfDTrees = 62;
     cv::Size winSize(128, 128);
     cv::Ptr<RandomForest> randomForest = RandomForest::createRandomForest(numberOfClasses, numberOfDTrees, winSize);
 
@@ -529,6 +529,6 @@ void NonMaximalSuppression::solver(float subsetPercentage = 50.0f,
                scaleFactor, outputDir, winSize);
 }
 
-NonMaximalSuppression::NonMaximalSuppression() = default;
+ObjectDetectionAndClassification::ObjectDetectionAndClassification() = default;
 
-NonMaximalSuppression::~NonMaximalSuppression() = default;
+ObjectDetectionAndClassification::~ObjectDetectionAndClassification() = default;

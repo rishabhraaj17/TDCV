@@ -29,13 +29,13 @@ set(HEADER_FILES
         include/HOGDescriptor.h
         include/RandomForest.h
         include/Util.h
-        include/NonMaximalSuppression.h)
+        include/ObjectDetectionAndClassification.h)
 
 set(SOURCE_FILES
         src/task1/HOGDescriptor.cpp
         src/task2/RandomForest.cpp
         src/task2/Util.cpp
-        src/task3/NonMaximalSuppression.cpp)
+        src/task3/ObjectDetectionAndClassification.cpp)
 
 
 # can rename executables further
