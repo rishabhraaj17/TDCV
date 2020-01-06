@@ -80,10 +80,8 @@ std::vector<cv::Ptr<cv::ml::DTrees> > RandomForest::getTrees() {
 
 void
 RandomForest::train(std::vector<std::pair<int, cv::Mat>> trainDataset, float perTreeTrainDatasetSubsetPercentage,
-                    const cv::Size &winStride,
-                    const cv::Size &padding, bool underSampling, bool dataAugmentation,
-                    const cv::Size &winSize = cv::Size(128, 128),
-                    bool usePreAugmentedDataset) {
+                    const cv::Size &winStride, const cv::Size &padding, bool underSampling, bool dataAugmentation,
+                    const cv::Size &winSize = cv::Size(128, 128), bool usePreAugmentedDataset = true, bool isTask3 = true) {
     // Augment the dataset
     int counter = 0;
     std::vector<std::pair<int, cv::Mat>> augmentedTrainDataset;
@@ -91,7 +89,11 @@ RandomForest::train(std::vector<std::pair<int, cv::Mat>> trainDataset, float per
     if (dataAugmentation) {
         if (usePreAugmentedDataset){
             std::cout << "Loading Augmented Dataset!"  << std::endl;
-            augmentedTrainDataset = loadAugmentedTrainDataset();
+            if (isTask3){
+                augmentedTrainDataset = loadTask3AugmentedTrainDataset();
+            } else {
+                augmentedTrainDataset = loadTask2AugmentedTrainDataset();
+            }
         } else {
             for (auto &&sample : trainDataset) {
                 std::vector<cv::Mat> augmentedImages = generateAugmentationsPerImage(sample.second, 4);
@@ -198,7 +200,7 @@ std::vector<std::pair<int, cv::Mat>> RandomForest::loadTestDataset() {
     return testDataset;
 }
 
-std::vector<std::pair<int, cv::Mat>> RandomForest::loadAugmentedTrainDataset() {
+std::vector<std::pair<int, cv::Mat>> RandomForest::loadTask2AugmentedTrainDataset() {
     std::vector<std::pair<int, cv::Mat>> augmentedTrainDataset;
     augmentedTrainDataset.reserve(2940 + 4020 + 2520 + 3180 + 4020 + 6600);
     int augmentedTrainImagesPerClassCount[6] = {2940, 4020, 2520, 3180, 4020, 6600};
@@ -207,6 +209,27 @@ std::vector<std::pair<int, cv::Mat>> RandomForest::loadAugmentedTrainDataset() {
         for (size_t j = 0; j < augmentedTrainImagesPerClassCount[i]; j++) {
             std::stringstream path;
             path << std::string(PROJ_DIR) << "/data/generated/task2/train/" << i <<
+                 "/" <<  j << ".jpg";
+            std::string imagePathStr = path.str();
+            std::pair<int, cv::Mat> pair;
+            pair.first = i;
+            pair.second = imread(imagePathStr, cv::IMREAD_UNCHANGED).clone();
+            augmentedTrainDataset.push_back(pair);
+        }
+    }
+
+    return augmentedTrainDataset;
+}
+
+std::vector<std::pair<int, cv::Mat>> RandomForest::loadTask3AugmentedTrainDataset() {
+    std::vector<std::pair<int, cv::Mat>> augmentedTrainDataset;
+    augmentedTrainDataset.reserve(3180 + 4860 + 3060 + 17400);
+    int augmentedTrainImagesPerClassCount[4] = {3180, 4860, 3060, 17400};
+
+    for (int i = 0; i < 4; i++) {
+        for (size_t j = 0; j < augmentedTrainImagesPerClassCount[i]; j++) {
+            std::stringstream path;
+            path << std::string(PROJ_DIR) << "/data/generated/task3/train/" << i <<
                  "/" <<  j << ".jpg";
             std::string imagePathStr = path.str();
             std::pair<int, cv::Mat> pair;

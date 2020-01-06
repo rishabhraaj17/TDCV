@@ -75,15 +75,16 @@ void randomForestClassifier(int numberOfClasses = 6,
     cv::Size winStride(8, 8);
     cv::Size padding(0, 0); // padding decreases accuracy
 
-    randomForest->train(trainDataset, subsetPercentage, winStride, padding, underSampling, augment, winSize);
+    randomForest->train(trainDataset, subsetPercentage, winStride, padding, underSampling, augment, winSize, true,
+                        false);
 
     // Predict on test dataset
     float accuracy = 0;
     float accuracyPerClass[6] = {0};
-    for (size_t i = 0; i < testDataset.size(); i++) {
-        cv::Mat testImage = testDataset.at(i).second;
+    for (auto & i : testDataset) {
+        cv::Mat testImage = i.second;
         ModelPrediction prediction = randomForest->predictPerImage(testImage, winStride, padding, winSize);
-        if (testDataset.at(i).first == prediction.label) {
+        if (i.first == prediction.label) {
             accuracy += 1;
             accuracyPerClass[prediction.label] += 1;
         }

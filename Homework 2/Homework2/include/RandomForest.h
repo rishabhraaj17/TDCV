@@ -38,8 +38,9 @@ public:
 
 
     void
-    train(std::vector<std::pair<int, cv::Mat>> trainDataset, float perTreeTrainDatasetSubsetPercentage, const cv::Size& winStride,
-          const cv::Size& padding, bool underSampling, bool dataAugmentation, const cv::Size& winSize, bool usePreAugmentedDataset = true);
+    train(std::vector<std::pair<int, cv::Mat>> trainDataset, float perTreeTrainDatasetSubsetPercentage,
+          const cv::Size &winStride, const cv::Size &padding, bool underSampling, bool dataAugmentation,
+          const cv::Size &winSize, bool usePreAugmentedDataset, bool isTask3);
 
     ModelPrediction predictPerImage(cv::Mat &testImage, cv::Size winStride, cv::Size padding, cv::Size winSize);
 
@@ -76,7 +77,9 @@ public:
 
     void augmentAndSaveOnDisk(std::vector<std::pair<int, cv::Mat>> trainDataset, const std::string &folderPath, int num_classes);
 
-    std::vector<std::pair<int, cv::Mat>> loadAugmentedTrainDataset();
+    std::vector<std::pair<int, cv::Mat>> loadTask2AugmentedTrainDataset();
+
+    std::vector<std::pair<int, cv::Mat>> loadTask3AugmentedTrainDataset();
 
 private:
     int mTreeCount;

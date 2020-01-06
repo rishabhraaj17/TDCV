@@ -10,50 +10,48 @@
 #define DISPLAY
 
 std::vector<std::pair<int, cv::Mat>> ObjectDetectionAndClassification::loadTrainDataset() {
-    std::vector<std::pair<int, cv::Mat>> labelImagesTrain;
-    labelImagesTrain.reserve(53 + 81 + 51 + 290);
-    int numberOfTrainImages[6] = {53, 81, 51, 290};
+    std::vector<std::pair<int, cv::Mat>> trainDataset;
+    trainDataset.reserve(53 + 81 + 51 + 290);
+    int trainImagesPerClassCount[4] = {53, 81, 51, 290};
 
     for (int i = 0; i < 4; i++)
     {
-        for (size_t j = 0; j < numberOfTrainImages[i]; j++)
+        for (size_t j = 0; j < trainImagesPerClassCount[i]; j++)
         {
             std::stringstream imagePath;
             imagePath << std::string(PROJ_DIR) << "/data/task3/train/" << std::setfill('0') << std::setw(2) <<
             i << "/" << std::setfill('0') << std::setw(4) << j << ".jpg";
             std::string imagePathStr = imagePath.str();
-            //std::cout << imagePathStr << std::endl;
             std::pair<int, cv::Mat> labelImagesTrainPair;
             labelImagesTrainPair.first = i;
             labelImagesTrainPair.second = imread(imagePathStr, cv::IMREAD_UNCHANGED).clone();
-            labelImagesTrain.push_back(labelImagesTrainPair);
+            trainDataset.push_back(labelImagesTrainPair);
         }
     }
-
-    return labelImagesTrain;
+    return trainDataset;
 }
 
 std::vector<std::pair<int, cv::Mat>> ObjectDetectionAndClassification::loadTestDataset() {
-    std::vector<std::pair<int, cv::Mat>> labelImagesTest;
-    labelImagesTest.reserve(44);
-    int numberOfTestImages[1] = {44};
+    std::vector<std::pair<int, cv::Mat>> testDataset;
+    testDataset.reserve(44);
+    int testImagesPerClassCount = 44;
 
-    for (size_t j = 0; j < numberOfTestImages[0]; j++)
+    for (size_t j = 0; j < testImagesPerClassCount; j++)
     {
         std::stringstream imagePath;
         imagePath << std::string(PROJ_DIR) << "/data/task3/test/" << std::setfill('0') << std::setw(4) <<
         j << ".jpg";
         std::string imagePathStr = imagePath.str();
-        //std::cout << imagePathStr << std::endl;
+        std::cout << imagePathStr << std::endl;
         std::pair<int, cv::Mat> labelImagesTestPair;
-        labelImagesTestPair.first = -1; // These test images have no label
+        labelImagesTestPair.first = -1;
         labelImagesTestPair.second = imread(imagePathStr, cv::IMREAD_UNCHANGED).clone();
-        labelImagesTest.push_back(labelImagesTestPair);
+        testDataset.push_back(labelImagesTestPair);
     }
-
-    return labelImagesTest;
+    return testDataset;
 }
 
+//todo
 std::vector<std::vector<std::vector<int>>> ObjectDetectionAndClassification::getLabelAndBoundingBoxes() {
     int numberOfTestImages = 44;
     std::vector<std::vector<std::vector<int>>> groundTruthBoundingBoxes;
@@ -90,6 +88,7 @@ std::vector<std::vector<std::vector<int>>> ObjectDetectionAndClassification::get
     return groundTruthBoundingBoxes;
 }
 
+//todo
 std::vector<float> ObjectDetectionAndClassification::computeTpFpFn(std::vector<ModelPrediction> predictionsNMSVector,
                                                                    std::vector<ModelPrediction> groundTruthPredictions) {
     float tp = 0, fp = 0, fn = 0;
@@ -147,6 +146,7 @@ std::vector<float> ObjectDetectionAndClassification::computeTpFpFn(std::vector<M
     return results;
 }
 
+//todo
 std::vector<float>
 ObjectDetectionAndClassification::precisionRecallNMS(std::string outputDir, std::vector<std::pair<int, cv::Mat>> &testImagesLabelVector,
                                                      std::vector<std::vector<std::vector<int>>> &labelAndBoundingBoxes, cv::Scalar *gtColors,
@@ -328,6 +328,7 @@ ObjectDetectionAndClassification::ObjectDetectionAndClassification(float max, fl
     this->NMS_CONFIDENCE_THRESHOLD = confidence;
 }
 
+//todo
 void ObjectDetectionAndClassification::evaluate_metrics(std::string outputDir,
                                                         std::vector<std::pair<int, cv::Mat>> &testImagesLabelVector,
                                                         std::vector<std::vector<std::vector<int>>> &labelAndBoundingBoxes) {
@@ -373,6 +374,7 @@ void ObjectDetectionAndClassification::evaluate_metrics(std::string outputDir,
     std::cout << "\n";
 }
 
+//todo
 void ObjectDetectionAndClassification::computeBoundingBoxAndConfidence(cv::Ptr<RandomForest> &randomForest,
                                                                        std::vector<std::pair<int, cv::Mat>> &testImagesLabelVector,
                                                                        std::vector<std::vector<std::vector<int>>> &labelAndBoundingBoxes,
@@ -478,6 +480,7 @@ void ObjectDetectionAndClassification::computeBoundingBoxAndConfidence(cv::Ptr<R
     predictionsFile.close();
 }
 
+//todo
 void ObjectDetectionAndClassification::solver(float subsetPercentage = 50.0f,
                                               bool underSampling = false,
                                               bool augment = true) {
@@ -496,7 +499,8 @@ void ObjectDetectionAndClassification::solver(float subsetPercentage = 50.0f,
     /*float subsetPercentage = 50.0f;
     bool underSampling = false;
     bool augment = true;*/
-    randomForest->train(trainingImagesLabelVector, subsetPercentage, winStride, padding, underSampling, augment, winSize);
+    randomForest->train(trainingImagesLabelVector, subsetPercentage, winStride, padding, underSampling, augment,
+                        winSize, false, false);
 
     // For each test image
     std::vector<std::pair<int, cv::Mat>> testImagesLabelVector = loadTestDataset();
