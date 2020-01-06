@@ -27,7 +27,6 @@ class RandomForest {
 public:
     RandomForest();
 
-    // You can create the forest directly in the constructor or create an empty forest and use the below methods to populate it
     RandomForest(int treeCount, int maxDepth, int CVFolds, int minSampleCount, int maxCategories);
 
     ~RandomForest();
@@ -44,8 +43,8 @@ public:
 
 
     void
-    train(std::vector<std::pair<int, cv::Mat>> trainingImagesLabelVector, float subsetPercentage, cv::Size winStride,
-          cv::Size padding, bool undersampling, bool augment, cv::Size winSize);
+    train(std::vector<std::pair<int, cv::Mat>> trainDataset, float perTreeTrainDatasetSubsetPercentage, cv::Size winStride,
+          cv::Size padding, bool underSampling, bool dataAugmentation, cv::Size winSize);
 
     Prediction predict(cv::Mat &testImage, cv::Size winStride, cv::Size padding, cv::Size winSize);
 
@@ -72,6 +71,8 @@ public:
 
     std::vector<cv::Ptr<cv::ml::DTrees>> getTrees();
 
+    void trainSingleTree(RandomForest *randomForest, std::vector<std::pair<int, cv::Mat>> &trainingImagesLabelVector);
+
 private:
     int mTreeCount;
     int mMaxDepth;
@@ -84,8 +85,6 @@ private:
     cv::HOGDescriptor mHogDescriptor;
     std::mt19937 mRandomGenerator;
 
-    // M-Trees for constructing thr forest
-    // decision tress
     std::vector<cv::Ptr<cv::ml::DTrees> > mTrees;
 
     std::vector<int> getRandomUniqueIndices(int start, int end, int numOfSamples);
@@ -98,7 +97,7 @@ private:
     std::vector<std::pair<int, cv::Mat>>
     generateTrainingImagesLabelSubsetVector(std::vector<std::pair<int, cv::Mat>> &trainingImagesLabelVector,
                                             float subsetPercentage,
-                                            bool undersampling);
+                                            bool underSampling);
 
     std::vector<cv::Mat> augmentImage(cv::Mat &inputImage);
 
