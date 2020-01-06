@@ -89,8 +89,8 @@ RandomForest::train(std::vector<std::pair<int, cv::Mat>> trainDataset, float per
     augmentedTrainDataset.reserve(trainDataset.size() * 60);
     if (dataAugmentation) {
         for (auto &&sample : trainDataset) {
-            std::vector<cv::Mat> augmentedImages = augmentImage(sample.second);
-            std::cout << "Augmented Images Iteration : " << counter++ << std::endl;
+            std::vector<cv::Mat> augmentedImages = generateAugmentationsPerImage(sample.second, 4);
+            std::cout << "Augmented Dataset, for Image : " << counter++ << std::endl;
             for (auto &&augmentedImage : augmentedImages) {
                 augmentedTrainDataset.emplace_back(sample.first, augmentedImage);
             }
@@ -315,49 +315,49 @@ RandomForest::trainDatasetSubsetSampler(std::vector<std::pair<int, cv::Mat>> &tr
 }
 
 //Todo
-std::vector<cv::Mat> RandomForest::augmentImage(cv::Mat &inputImage) {
-    std::vector<cv::Mat> augmentations;
+std::vector<cv::Mat> RandomForest::generateAugmentationsPerImage(cv::Mat &inputImage, int numOfRandomRotations = 4) {
+    std::vector<cv::Mat> augmentedImages;
     cv::Mat currentImage = inputImage;
     cv::Mat rotatedImage, flippedImage;
     for (size_t j = 0; j < 4; j++) {
-        std::vector<cv::Mat> currentImageAugmentations;
+        std::vector<cv::Mat> augmentedVector;
         if (j == 0)
             rotatedImage = currentImage;
         else
             cv::rotate(currentImage, rotatedImage, cv::ROTATE_90_CLOCKWISE);
-        currentImageAugmentations.push_back(rotatedImage);
+        augmentedVector.push_back(rotatedImage);
 
-        int numOfRandomRotations = 4;
-        for (size_t i = 0; i < numOfRandomRotations; i++) {
+        int totalRotations = numOfRandomRotations; //TODO Observe augmentations and parameters
+        for (size_t i = 0; i < totalRotations; i++) { //TODO Remove viz comments before submission
             cv::Mat randomlyRotatedImage(rotatedImage.size(), rotatedImage.type());
             cv::RNG rng(time(0));
             RandomRotateImage(rotatedImage, randomlyRotatedImage, 90, 30, 30, cv::Rect(0, 0, 0, 0), rng);
-            currentImageAugmentations.push_back(randomlyRotatedImage);
+            augmentedVector.push_back(randomlyRotatedImage);
             // cv::imshow("input image", rotatedImage);
             // cv::imshow("RandomRotationImage", randomlyRotatedImage);
             // cv::waitKey(1000);
         }
 
-        int imagesToFlip = currentImageAugmentations.size();
-        for (int i = 0; i < imagesToFlip; i++) {
-            cv::flip(currentImageAugmentations[i], flippedImage, 0);
-            currentImageAugmentations.push_back(flippedImage);
+        int numImagesToFlip = augmentedVector.size();
+        for (int i = 0; i < numImagesToFlip; i++) {
+            cv::flip(augmentedVector[i], flippedImage, 0);
+            augmentedVector.push_back(flippedImage);
             // cv::Mat dest;
-            // cv::vconcat(currentImageAugmentations[i], flippedImage, dest);
+            // cv::vconcat(augmentedVector[i], flippedImage, dest);
             // cv::imshow("AugmentedImage", dest);
             // cv::waitKey(1000);
-            cv::flip(currentImageAugmentations[i], flippedImage, 1);
-            currentImageAugmentations.push_back(flippedImage);
-            // cv::vconcat(currentImageAugmentations[i], flippedImage, dest);
+            cv::flip(augmentedVector[i], flippedImage, 1);
+            augmentedVector.push_back(flippedImage);
+            // cv::vconcat(augmentedVector[i], flippedImage, dest);
             // cv::imshow("AugmentedImage", dest);
             // cv::waitKey(1000);
         }
 
-        augmentations.insert(augmentations.end(), currentImageAugmentations.begin(), currentImageAugmentations.end());
+        augmentedImages.insert(augmentedImages.end(), augmentedVector.begin(), augmentedVector.end());
         currentImage = rotatedImage;
     }
 
-    return augmentations;
+    return augmentedImages;
 }
 
 cv::Ptr<RandomForest> RandomForest::createRandomForest(int numberOfClasses, int numberOfDTrees, cv::Size winSize) {

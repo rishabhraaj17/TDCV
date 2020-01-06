@@ -98,7 +98,7 @@ private:
                               float perTreeTrainDatasetSubsetPercentage,
                               bool underSampling);
 
-    std::vector<cv::Mat> augmentImage(cv::Mat &inputImage);
+    std::vector<cv::Mat> generateAugmentationsPerImage(cv::Mat &inputImage, int numOfRandomRotations);
 
     // taken from external library : https://github.com/takmin/DataAugmentation
     void RandomRotateImage(const cv::Mat &src, cv::Mat &dst, float yaw_range, float pitch_range, float roll_range,
