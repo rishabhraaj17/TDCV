@@ -107,9 +107,9 @@ int main() {
     cv::Size winSize(128, 128);
     singleDecisionTreeClassifier(numClasses, maxDepth, winSize);
     cout << "\n*********** Random Forest Classification *************************************" << endl;
-    int numberOfDTrees = 10; // TODO: 70 trees gives 90% accuracy
+    int numberOfDTrees = 2; // TODO: 70 trees gives 90% accuracy
     float subsetPercentage = 50.0f;
-    bool underSampling = false; //under sample the dataset or not (Class Imbalance)
+    bool underSampling = true; //under sample the dataset or not (Class Imbalance)
     bool augment = false;
     randomForestClassifier(numClasses, numberOfDTrees, winSize, subsetPercentage, underSampling, augment);
     cout << "\n******************* Task 2 Finished! *************************************" << endl;

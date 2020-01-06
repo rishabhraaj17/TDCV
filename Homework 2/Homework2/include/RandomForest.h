@@ -93,17 +93,15 @@ private:
 
     std::vector<cv::Ptr<cv::ml::DTrees> > mTrees;
 
-    std::vector<int> getRandomUniqueIndices(int start, int end, int numOfSamples);
-
     cv::Ptr<cv::ml::DTrees> trainDecisionTree(std::vector<std::pair<int, cv::Mat>> &trainingImagesLabelVector,
                                               cv::Size winStride,
                                               cv::Size padding,
                                               cv::Size winSize);
 
     std::vector<std::pair<int, cv::Mat>>
-    generateTrainingImagesLabelSubsetVector(std::vector<std::pair<int, cv::Mat>> &trainingImagesLabelVector,
-                                            float subsetPercentage,
-                                            bool underSampling);
+    trainDatasetSubsetSampler(std::vector<std::pair<int, cv::Mat>> &trainDataset,
+                              float perTreeTrainDatasetSubsetPercentage,
+                              bool underSampling);
 
     std::vector<cv::Mat> augmentImage(cv::Mat &inputImage);
 

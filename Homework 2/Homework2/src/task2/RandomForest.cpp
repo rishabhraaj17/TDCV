@@ -108,9 +108,9 @@ RandomForest::train(std::vector<std::pair<int, cv::Mat>> trainDataset, float per
     {
         std::cout << "Training Decision Tree: " << i << " - Total Trees : " << mTreeCount << "\n";
         std::vector<std::pair<int, cv::Mat>> subsetOfTrainDataset =
-                generateTrainingImagesLabelSubsetVector(augmentedTrainDataset,
-                                                        perTreeTrainDatasetSubsetPercentage,
-                                                        underSampling);
+                trainDatasetSubsetSampler(augmentedTrainDataset,
+                                          perTreeTrainDatasetSubsetPercentage,
+                                          underSampling);
 
         cv::Ptr<cv::ml::DTrees> model = trainDecisionTree(subsetOfTrainDataset,
                                                           winStride,
@@ -120,6 +120,7 @@ RandomForest::train(std::vector<std::pair<int, cv::Mat>> trainDataset, float per
     }
 }
 
+//todo
 Prediction RandomForest::predict(cv::Mat &testImage, cv::Size winStride, cv::Size padding, cv::Size winSize = cv::Size(128, 128)) {
     // Fill
     cv::Mat resizedInputImage = resizeToBoundingBox(testImage, winSize); //fixme
@@ -156,64 +157,54 @@ Prediction RandomForest::predict(cv::Mat &testImage, cv::Size winStride, cv::Siz
 }
 
 std::vector<std::pair<int, cv::Mat>> RandomForest::loadTrainDataset() {
-    std::vector<std::pair<int, cv::Mat>> labelImagesTrain;
-    labelImagesTrain.reserve(49 + 67 + 42 + 53 + 67 + 110);
-    int numberOfTrainImages[6] = {49, 67, 42, 53, 67, 110};
+    // < label, image > trainDataset
+    std::vector<std::pair<int, cv::Mat>> trainDataset;
+    trainDataset.reserve(49 + 67 + 42 + 53 + 67 + 110);
+    int trainImagesPerClassCount[6] = {49, 67, 42, 53, 67, 110};
 
     for (int i = 0; i < 6; i++)
     {
-        for (size_t j = 0; j < numberOfTrainImages[i]; j++)
+        for (size_t j = 0; j < trainImagesPerClassCount[i]; j++)
         {
-            std::stringstream imagePath;
-            imagePath << std::string(PROJ_DIR) << "/data/task2/train/" << std::setfill('0') << std::setw(2) << i << "/" << std::setfill('0') << std::setw(4) << j << ".jpg";
-            std::string imagePathStr = imagePath.str();
-            //std::cout << imagePathStr << std::endl;
-            std::pair<int, cv::Mat> labelImagesTrainPair;
-            labelImagesTrainPair.first = i;
-            labelImagesTrainPair.second = imread(imagePathStr, cv::IMREAD_UNCHANGED).clone();
-            labelImagesTrain.push_back(labelImagesTrainPair);
+            std::stringstream path;
+            path << std::string(PROJ_DIR) << "/data/task2/train/" << std::setfill('0') << std::setw(2) << i <<
+            "/" << std::setfill('0') << std::setw(4) << j << ".jpg";
+            std::string imagePathStr = path.str();
+            std::pair<int, cv::Mat> pair;
+            pair.first = i;
+            pair.second = imread(imagePathStr, cv::IMREAD_UNCHANGED).clone();
+            trainDataset.push_back(pair);
         }
     }
 
-    return labelImagesTrain;
+    return trainDataset;
 }
 
 std::vector<std::pair<int, cv::Mat>> RandomForest::loadTestDataset() {
-    std::vector<std::pair<int, cv::Mat>> labelImagesTest;
-    labelImagesTest.reserve(60);
-    int numberOfTestImages[6] = {10, 10, 10, 10, 10, 10};
-    int numberOfTrainImages[6] = {49, 67, 42, 53, 67, 110};
+    std::vector<std::pair<int, cv::Mat>> testDataset;
+    testDataset.reserve(60);
+    int testImagesPerClassCount[6] = {10, 10, 10, 10, 10, 10};
+    int trainImagesPerClassCount[6] = {49, 67, 42, 53, 67, 110};
 
     for (int i = 0; i < 6; i++)
     {
-        for (size_t j = 0; j < numberOfTestImages[i]; j++)
+        for (size_t j = 0; j < testImagesPerClassCount[i]; j++)
         {
-            std::stringstream imagePath;
-            imagePath << std::string(PROJ_DIR) << "/data/task2/test/" << std::setfill('0') << std::setw(2) << i << "/" << std::setfill('0') << std::setw(4) << j + numberOfTrainImages[i] << ".jpg";
-            std::string imagePathStr = imagePath.str();
-            //std::cout << imagePathStr << std::endl;
-            std::pair<int, cv::Mat> labelImagesTestPair;
-            labelImagesTestPair.first = i;
-            labelImagesTestPair.second = imread(imagePathStr, cv::IMREAD_UNCHANGED).clone();
-            labelImagesTest.push_back(labelImagesTestPair);
+            std::stringstream path;
+            path << std::string(PROJ_DIR) << "/data/task2/test/" << std::setfill('0') << std::setw(2) << i <<
+            "/" << std::setfill('0') << std::setw(4) << j + trainImagesPerClassCount[i] << ".jpg";
+            std::string imagePathStr = path.str();
+            std::pair<int, cv::Mat> pair;
+            pair.first = i;
+            pair.second = imread(imagePathStr, cv::IMREAD_UNCHANGED).clone();
+            testDataset.push_back(pair);
         }
     }
 
-    return labelImagesTest;
+    return testDataset;
 }
 
-std::vector<int> RandomForest::getRandomUniqueIndices(int start, int end, int numOfSamples) {
-    std::vector<int> indices;
-    indices.reserve(end - start);
-    for (size_t i = start; i < end; i++)
-        indices.push_back(i);
-
-    std::shuffle(indices.begin(), indices.end(), mRandomGenerator);
-    // copy(indices.begin(), indices.begin() + numOfSamples, std::ostream_iterator<int>(std::cout, ", "));
-    // cout << endl;
-    return std::vector<int>(indices.begin(), indices.begin() + numOfSamples);
-}
-
+//todo
 cv::HOGDescriptor RandomForest::createHogDescriptor(cv::Size size = cv::Size(128, 128)) {
     cv::Size wSize = size;
     cv::Size blockSize(16, 16);
@@ -236,6 +227,7 @@ cv::HOGDescriptor RandomForest::createHogDescriptor(cv::Size size = cv::Size(128
     return hog_descriptor;
 }
 
+//todo
 cv::Ptr<cv::ml::DTrees>
 RandomForest::trainDecisionTree(std::vector<std::pair<int, cv::Mat>> &trainingImagesLabelVector, cv::Size winStride,
                                 cv::Size padding, cv::Size winSize = cv::Size(128, 128)) {
@@ -288,6 +280,7 @@ RandomForest::trainDecisionTree(std::vector<std::pair<int, cv::Mat>> &trainingIm
     return model;
 }
 
+//todo
 cv::Mat RandomForest::resizeToBoundingBox(cv::Mat &inputImage, cv::Size size) {
     mWinSize = size;
     cv::Mat resizedInputImage;
@@ -310,57 +303,69 @@ cv::Mat RandomForest::resizeToBoundingBox(cv::Mat &inputImage, cv::Size size) {
 }
 
 std::vector<std::pair<int, cv::Mat>>
-RandomForest::generateTrainingImagesLabelSubsetVector(std::vector<std::pair<int, cv::Mat>> &trainingImagesLabelVector,
-                                                      float subsetPercentage, bool underSampling) {
-    std::vector<std::pair<int, cv::Mat>> trainingImagesLabelSubsetVector;
+RandomForest::trainDatasetSubsetSampler(std::vector<std::pair<int, cv::Mat>> &trainDataset,
+                                        float perTreeTrainDatasetSubsetPercentage, bool underSampling) {
+    std::vector<std::pair<int, cv::Mat>> trainDatasetSubset;
+    // Samples randomly subset of images
 
-    // Compute minimum number of samples a class label has.
-    int minimumSample = trainingImagesLabelVector.size(); // A high enough value
+    // A high value to start with
+    int minSample = 999999;
 
     if (underSampling)
     {
-        int minimumClassSamples[mMaxCategories];
+        int minSamplesPerClass[mMaxCategories];
+        // Initialize each class to 0
         for (size_t i = 0; i < mMaxCategories; i++)
-            minimumClassSamples[i] = 0;
-        for (auto &&trainingSample : trainingImagesLabelVector)
-            minimumClassSamples[trainingSample.first]++;
+            minSamplesPerClass[i] = 0;
+        // Finding number of sample for each class
+        for (auto &&trainingSample : trainDataset)
+            minSamplesPerClass[trainingSample.first]++;
+        // Get the minimum samples one class has
         for (size_t i = 1; i < mMaxCategories; i++)
-            if (minimumClassSamples[i] < minimumSample)
-                minimumSample = minimumClassSamples[i];
+            if (minSamplesPerClass[i] < minSample)
+                minSample = minSamplesPerClass[i];
     }
 
     for (size_t label = 0; label < mMaxCategories; label++)
     {
-        // Create a subset vector for all the samples with class label.
-        std::vector<std::pair<int, cv::Mat>> temp;
-        temp.reserve(100);
-        for (auto &&sample : trainingImagesLabelVector)
+        std::vector<std::pair<int, cv::Mat>> workingSubset;
+        workingSubset.reserve(100);
+        for (auto &&sample : trainDataset)
             if (sample.first == label)
-                temp.push_back(sample);
+                workingSubset.push_back(sample);
 
-        // Compute how many samples to choose for each label for random subset.
-        int numOfElements;
+        // Number of samples to choose for each label for current subset.
+        // Under Sampling maintains class balance
+        int numOfElements = 0;
         if (underSampling)
         {
-            numOfElements = (subsetPercentage * minimumSample) / 100;
+            numOfElements = (perTreeTrainDatasetSubsetPercentage * minSample) / 100;
         }
         else
         {
-            numOfElements = (temp.size() * subsetPercentage) / 100;
+            numOfElements = (workingSubset.size() * perTreeTrainDatasetSubsetPercentage) / 100;
         }
 
-        // Filter numOfElements elements from temp and append to trainingImagesLabelSubsetVector
-        std::vector<int> randomUniqueIndices = getRandomUniqueIndices(0, temp.size(), numOfElements);
-        for (size_t j = 0; j < randomUniqueIndices.size(); j++)
+        // Generating random indexes to pick samples from for subset train Dataset
+        std::vector<int> idxs;
+        idxs.reserve(workingSubset.size() - 0);
+        for (size_t i = 0; i < workingSubset.size(); i++)
+            idxs.push_back(i);
+
+        std::shuffle(idxs.begin(), idxs.end(), mRandomGenerator);
+        std::vector<int> finalIdxs = std::vector<int>(idxs.begin(), idxs.begin() + numOfElements);
+
+        for (int finalIdx : finalIdxs)
         {
-            std::pair<int, cv::Mat> subsetSample = temp.at(randomUniqueIndices.at(j));
-            trainingImagesLabelSubsetVector.push_back(subsetSample);
+            std::pair<int, cv::Mat> subsetSample = workingSubset.at(finalIdx);
+            trainDatasetSubset.push_back(subsetSample);
         }
     }
 
-    return trainingImagesLabelSubsetVector;
+    return trainDatasetSubset;
 }
 
+//Todo
 std::vector<cv::Mat> RandomForest::augmentImage(cv::Mat &inputImage) {
     std::vector<cv::Mat> augmentations;
     cv::Mat currentImage = inputImage;
@@ -468,6 +473,8 @@ void RandomForest::trainSingleTree(RandomForest *randomForest,
     std::cout<< "Single Decision Tree Trained!" << std::endl;
 }
 
+
+// taken from git : link in header file
 void
 RandomForest::RandomRotateImage(const cv::Mat &src, cv::Mat &dst, float yaw_range, float pitch_range, float roll_range,
                                 const cv::Rect &area, cv::RNG rng, float Z, int interpolation, int boarder_mode,
