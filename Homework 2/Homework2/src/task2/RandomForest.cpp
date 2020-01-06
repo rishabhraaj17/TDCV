@@ -3,6 +3,7 @@
 //
 
 #include <Util.h>
+#include <opencv2/core/utils/filesystem.hpp>
 #include "RandomForest.h"
 
 
@@ -415,10 +416,29 @@ cv::Ptr<RandomForest> RandomForest::createRandomForest(int numberOfClasses, int 
     randomForest->mWinSize = winSize;
     randomForest->mTrees.reserve(numberOfDTrees);
     randomForest->mHogDescriptor = randomForest->createHogDescriptor(winSize);
-    long unsigned int timestamp = static_cast<long unsigned int>(time(0));
-    std::cout << timestamp << std::endl;
+    auto timestamp = static_cast<long unsigned int>(time(0));
     randomForest->mRandomGenerator = std::mt19937(timestamp);
     return randomForest;
+}
+
+void RandomForest::setTrees(std::vector<cv::Ptr<cv::ml::DTrees>> trees) {
+    mTrees = trees;
+}
+
+void RandomForest::saveModel(const std::string &path) {
+    cv::utils::fs::createDirectories(path);
+    int idx = 0;
+    for (const auto &tree : this->mTrees) {
+        tree->save(path + '/' + std::to_string(idx++) + ".tree");
+    }
+}
+
+std::vector<cv::Ptr<cv::ml::DTrees>> RandomForest::loadModel(const std::string &path, int treeCount) {
+    std::vector<cv::Ptr<cv::ml::DTrees> > totalTrees;
+    for(size_t i = 0; i < treeCount; i++){
+        totalTrees.push_back(cv::ml::DTrees::load(path + '/' + std::to_string(i) + ".tree"));
+    }
+    return totalTrees;
 }
 
 void RandomForest::trainSingleTree(RandomForest *randomForest,

@@ -22,6 +22,9 @@ singleDecisionTreeClassifier(int num_classes = 6,
     cout << "Training!" << endl;
     randomForest->trainSingleTree(randomForest, trainDataset);
 
+    // Load from Model file
+    //randomForest->setTrees(RandomForest::loadModel("../output/models/test", 1));
+
     //Load Test Dataset
     vector<pair<int, cv::Mat>> testDataset = randomForest->loadTestDataset();
     cout << "\nEvaluating!" << endl;
@@ -49,6 +52,9 @@ singleDecisionTreeClassifier(int num_classes = 6,
     }
     cout << "Single Decision Tree Classification Accuracy : " << (accuracy / testDataset.size()) * 100.0f
          << "%" << endl;
+
+    // Save Model
+    //randomForest->saveModel("../output/models/test");
 }
 
 
@@ -104,7 +110,7 @@ int main() {
     int numberOfDTrees = 10; // TODO: 70 trees gives 90% accuracy
     float subsetPercentage = 50.0f;
     bool underSampling = false; //under sample the dataset or not (Class Imbalance)
-    bool augment = true;
+    bool augment = false;
     randomForestClassifier(numClasses, numberOfDTrees, winSize, subsetPercentage, underSampling, augment);
     cout << "\n******************* Task 2 Finished! *************************************" << endl;
     return 0;

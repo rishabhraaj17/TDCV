@@ -71,7 +71,13 @@ public:
 
     std::vector<cv::Ptr<cv::ml::DTrees>> getTrees();
 
+    void setTrees(std::vector<cv::Ptr<cv::ml::DTrees>> trees);
+
     void trainSingleTree(RandomForest *randomForest, std::vector<std::pair<int, cv::Mat>> &trainingImagesLabelVector);
+
+    void saveModel(const std::string &path);
+
+    static std::vector<cv::Ptr<cv::ml::DTrees>> loadModel(const std::string &path, int treeCount);
 
 private:
     int mTreeCount;
@@ -101,7 +107,7 @@ private:
 
     std::vector<cv::Mat> augmentImage(cv::Mat &inputImage);
 
-    // copied from external library : https://github.com/takmin/DataAugmentation
+    // taken from external library : https://github.com/takmin/DataAugmentation
     void RandomRotateImage(const cv::Mat &src, cv::Mat &dst, float yaw_range, float pitch_range, float roll_range,
                            const cv::Rect &area = cv::Rect(-1, -1, 0, 0), cv::RNG rng = cv::RNG(),
                            float Z = 1000, int interpolation = cv::INTER_LINEAR, int boarder_mode = cv::BORDER_CONSTANT,
