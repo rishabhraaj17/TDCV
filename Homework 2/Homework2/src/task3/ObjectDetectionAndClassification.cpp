@@ -227,7 +227,7 @@ ObjectDetectionAndClassification::precisionRecallNMS(const std::string &savePath
         cv::Mat clonedFirst = currentTestImage.clone(); // For drawing bbox
         cv::Mat clonedSecond = currentTestImage.clone();  // For drawing bbox
         std::vector<ModelPrediction> NMSPredictions;
-        NMSPredictions.reserve(20); // 20 should be enough.
+        NMSPredictions.reserve(20); // 20 should be enough. //// HyperParam try reducing
 
         // Ignore boxes with low threshold.
         std::vector<ModelPrediction>::iterator iter;
@@ -237,8 +237,6 @@ ObjectDetectionAndClassification::precisionRecallNMS(const std::string &savePath
             else
                 ++iter;
         }
-
-        // std::sort(predictionsVector.begin(), predictionsVector.end(), greater_than_key());
 
         for (auto &&prediction : predictions) {
             cv::rectangle(clonedFirst, prediction.boundingBox, this->bBoxColors[prediction.label]);
@@ -349,7 +347,7 @@ void ObjectDetectionAndClassification::evaluate_metrics(std::string savePath,
     metricLogCSV << "Precision,Recall" << std::endl;
     std::cout << "\nNMS_CONFIDENCE_THRESHOLD " << "      Precision           "
                                                   "Recall " << std::endl;
-    // 60 to 90 is the reasonable range!
+    // 60 to 90 is the reasonable range! 55 to 80 is promising// HyperParam
     for (int confidence = 60; confidence <= 90; confidence += 5) {
         this->NMS_CONFIDENCE_THRESHOLD = confidence / 100.0f;
         std::vector<float> precisionRecallValue = precisionRecallNMS(savePath, testDataset,
