@@ -6,6 +6,8 @@
 #include "ObjectDetectionAndClassification.h"
 #include <boost/filesystem.hpp>
 #include <opencv2/core/utils/filesystem.hpp>
+#include <chrono>
+#include <ctime>
 
 #define DISPLAY
 
@@ -14,13 +16,11 @@ std::vector<std::pair<int, cv::Mat>> ObjectDetectionAndClassification::loadTrain
     trainDataset.reserve(53 + 81 + 51 + 290);
     int trainImagesPerClassCount[4] = {53, 81, 51, 290};
 
-    for (int i = 0; i < 4; i++)
-    {
-        for (size_t j = 0; j < trainImagesPerClassCount[i]; j++)
-        {
+    for (int i = 0; i < 4; i++) {
+        for (size_t j = 0; j < trainImagesPerClassCount[i]; j++) {
             std::stringstream imagePath;
             imagePath << std::string(PROJ_DIR) << "/data/task3/train/" << std::setfill('0') << std::setw(2) <<
-            i << "/" << std::setfill('0') << std::setw(4) << j << ".jpg";
+                      i << "/" << std::setfill('0') << std::setw(4) << j << ".jpg";
             std::string imagePathStr = imagePath.str();
             std::pair<int, cv::Mat> labelImagesTrainPair;
             labelImagesTrainPair.first = i;
@@ -36,11 +36,10 @@ std::vector<std::pair<int, cv::Mat>> ObjectDetectionAndClassification::loadTestD
     testDataset.reserve(44);
     int testImagesPerClassCount = 44;
 
-    for (size_t j = 0; j < testImagesPerClassCount; j++)
-    {
+    for (size_t j = 0; j < testImagesPerClassCount; j++) {
         std::stringstream imagePath;
         imagePath << std::string(PROJ_DIR) << "/data/task3/test/" << std::setfill('0') << std::setw(4) <<
-        j << ".jpg";
+                  j << ".jpg";
         std::string imagePathStr = imagePath.str();
         std::cout << imagePathStr << std::endl;
         std::pair<int, cv::Mat> labelImagesTestPair;
@@ -57,29 +56,25 @@ std::vector<std::vector<std::vector<int>>> ObjectDetectionAndClassification::get
      */
     int testImagesPerClassCount = 44;
     std::vector<std::vector<std::vector<int>>> groundTruthLabelAndBoundingBoxes;
-    for (size_t j = 0; j < testImagesPerClassCount; j++)
-    {
+    for (size_t j = 0; j < testImagesPerClassCount; j++) {
         std::stringstream path;
         path << std::string(PROJ_DIR) << "/data/task3/gt/" << std::setfill('0') << std::setw(4) << j << ".gt.txt";
         std::string pathStr = path.str();
 
         std::fstream groundTruth;
         groundTruth.open(pathStr);
-        if (!groundTruth.is_open())
-        {
+        if (!groundTruth.is_open()) {
             std::cout << "Failed to open file: " << pathStr << std::endl;
             exit(-1);
         }
 
         std::string line;
         std::vector<std::vector<int>> boundingBoxesPerImage;
-        while (std::getline(groundTruth, line))
-        {
+        while (std::getline(groundTruth, line)) {
             std::istringstream in(line);
             std::vector<int> labelAndBoundingBox(5);
             int temp;
-            for (size_t i = 0; i < 5; i++)
-            {
+            for (size_t i = 0; i < 5; i++) {
                 in >> temp;
                 labelAndBoundingBox.at(i) = temp;
             }
@@ -90,81 +85,79 @@ std::vector<std::vector<std::vector<int>>> ObjectDetectionAndClassification::get
     return groundTruthLabelAndBoundingBoxes;
 }
 
-//todo
-std::vector<float> ObjectDetectionAndClassification::computeTpFpFn(std::vector<ModelPrediction> predictionsNMSVector,
-                                                                   std::vector<ModelPrediction> groundTruthPredictions) {
-    float tp = 0, fp = 0, fn = 0;
-    float matchThresholdIou = 0.5f;
+std::vector<float> ObjectDetectionAndClassification::computeTruePositiveFalsePositive(
+        const std::vector<ModelPrediction> &predictionsAfterNMS, const std::vector<ModelPrediction> &groundTruth,
+        float thresholdIOU = 0.5f) {
+    float truePositive = 0, falsePositive = 0;
 
-    for (auto &&myPrediction : predictionsNMSVector)
-    {
-        bool matchesWithAnyGroundTruth = false;
-        cv::Rect myRect = myPrediction.boundingBox;
-
-        for (auto &&groundTruth : groundTruthPredictions)
-        {
-            if (groundTruth.label != myPrediction.label)
+    for (auto &&pred : predictionsAfterNMS) {
+        bool predMatchedGroundTruth = false;
+        cv::Rect myRect = pred.boundingBox;
+        for (auto &&gt : groundTruth) {
+            if (gt.label != pred.label)
                 continue;
-            cv::Rect gtRect = groundTruth.boundingBox;
+            cv::Rect gtRect = gt.boundingBox;
             float iouScore = ((myRect & gtRect).area() * 1.0f) / ((myRect | gtRect).area());
-            if (iouScore > matchThresholdIou)
-            {
-                matchesWithAnyGroundTruth = true;
+            if (iouScore > thresholdIOU) {
+                predMatchedGroundTruth = true;
                 break;
             }
         }
-
-        if (matchesWithAnyGroundTruth)
-            tp++;
+        if (predMatchedGroundTruth)
+            truePositive++;
         else
-            fp++;
+            falsePositive++;
     }
+    std::vector<float> truePositiveFalsePositive;
+    truePositiveFalsePositive.push_back(truePositive);
+    truePositiveFalsePositive.push_back(falsePositive);
+    return truePositiveFalsePositive;
+}
 
-    for (auto &&groundTruth : groundTruthPredictions)
-    {
-        bool isGtBboxMissed = true;
-        cv::Rect gtRect = groundTruth.boundingBox;
-        for (auto &&myPrediction : predictionsNMSVector)
-        {
-            if (groundTruth.label != myPrediction.label)
+std::vector<float> ObjectDetectionAndClassification::computeTrueNegativeFalseNegative(
+        const std::vector<ModelPrediction> &predictionsAfterNMS, const std::vector<ModelPrediction> &groundTruth,
+        float thresholdIOU = 0.5f) {
+    float trueNegative = 0, falseNegative = 0;
+
+    for (auto &&pred : groundTruth) {
+        bool gtMissed = true;
+        cv::Rect gtRect = pred.boundingBox;
+        for (auto &&myPrediction : predictionsAfterNMS) {
+            if (pred.label != myPrediction.label)
                 continue;
             cv::Rect myRect = myPrediction.boundingBox;
             float iouScore = ((myRect & gtRect).area() * 1.0f) / ((myRect | gtRect).area());
-            if (iouScore > matchThresholdIou)
-            {
-                isGtBboxMissed = false;
+            if (iouScore > thresholdIOU) {
+                gtMissed = false;
                 break;
             }
         }
-
-        if (isGtBboxMissed)
-            fn++;
+        if (gtMissed)
+            falseNegative++;
     }
-
-    std::vector<float> results;
-    results.push_back(tp);
-    results.push_back(fp);
-    results.push_back(fn);
-    return results;
+    std::vector<float> falseNegativeTrueNegative;
+    falseNegativeTrueNegative.push_back(falseNegative);
+    falseNegativeTrueNegative.push_back(trueNegative);
+    return falseNegativeTrueNegative;
 }
 
 //todo
 std::vector<float>
-ObjectDetectionAndClassification::precisionRecallNMS(std::string outputDir, std::vector<std::pair<int, cv::Mat>> &testImagesLabelVector,
-                                                     std::vector<std::vector<std::vector<int>>> &labelAndBoundingBoxes, cv::Scalar *gtColors,
+ObjectDetectionAndClassification::precisionRecallNMS(std::string outputDir,
+                                                     std::vector<std::pair<int, cv::Mat>> &testImagesLabelVector,
+                                                     std::vector<std::vector<std::vector<int>>> &labelAndBoundingBoxes,
+                                                     cv::Scalar *gtColors,
                                                      float NMS_MIN_IOU_THRESHOLD, float NMS_MAX_IOU_THRESHOLD,
                                                      float NMS_CONFIDENCE_THRESHOLD) {
     std::ifstream predictionsFile(outputDir + "predictions.txt");
-    if (!predictionsFile.is_open())
-    {
+    if (!predictionsFile.is_open()) {
         std::cout << "Failed to open" << outputDir + "predictions.txt" << std::endl;
         exit(-1);
     }
 
 
-    float tp = 0, fp = 0, fn = 0;
-    for (size_t i = 0; i < testImagesLabelVector.size(); i++)
-    {
+    float truePositive = 0, falsePositive = 0, falseNegative = 0;
+    for (size_t i = 0; i < testImagesLabelVector.size(); i++) {
         int fileNumber;
         predictionsFile >> fileNumber; // Prediction file format: Starts with File number
         assert(fileNumber == i);
@@ -173,8 +166,7 @@ ObjectDetectionAndClassification::precisionRecallNMS(std::string outputDir, std:
         int tmp, tmp1;
         predictionsFile >> tmp; // Ignore - number of ground truth
         std::vector<ModelPrediction> groundTruthPredictions;
-        for (size_t j = 0; j < tmp; j++)
-        {
+        for (size_t j = 0; j < tmp; j++) {
             ModelPrediction groundTruthPrediction;
             groundTruthPrediction.label = labelAndBoundingBoxes.at(i).at(j).at(0);
             groundTruthPrediction.boundingBox.x = labelAndBoundingBoxes.at(i).at(j).at(1);
@@ -186,8 +178,7 @@ ObjectDetectionAndClassification::precisionRecallNMS(std::string outputDir, std:
             groundTruthPredictions.push_back(groundTruthPrediction);
 
             predictionsFile >> tmp1; // Ignore - label;
-            for (size_t k = 0; k < 4; k++)
-            {
+            for (size_t k = 0; k < 4; k++) {
                 predictionsFile >> tmp1; // Ignore - rectangle
             }
         }
@@ -198,11 +189,11 @@ ObjectDetectionAndClassification::precisionRecallNMS(std::string outputDir, std:
         int numOfPredictions;
         predictionsFile >> numOfPredictions;
         predictionsVector.reserve(numOfPredictions);
-        for (size_t i = 0; i < numOfPredictions; i++)
-        {
+        for (size_t i = 0; i < numOfPredictions; i++) {
             ModelPrediction prediction;
             predictionsFile >> prediction.label;
-            predictionsFile >> prediction.boundingBox.x >> prediction.boundingBox.y >> prediction.boundingBox.height >> prediction.boundingBox.width;
+            predictionsFile >> prediction.boundingBox.x >> prediction.boundingBox.y >> prediction.boundingBox.height
+                            >> prediction.boundingBox.width;
             predictionsFile >> prediction.confidence;
             predictionsVector.push_back(prediction);
         }
@@ -210,8 +201,7 @@ ObjectDetectionAndClassification::precisionRecallNMS(std::string outputDir, std:
         // Display all the bounding boxes before NonMaximal Suppression
 #ifdef DISPLAY
         cv::Mat testImageClone = testImage.clone(); // For drawing bbox
-        for (auto &&prediction : predictionsVector)
-        {
+        for (auto &&prediction : predictionsVector) {
             cv::rectangle(testImageClone, prediction.boundingBox, gtColors[prediction.label]);
         }
         cv::imshow("TestImageOutput", testImageClone);
@@ -226,7 +216,7 @@ ObjectDetectionAndClassification::precisionRecallNMS(std::string outputDir, std:
 
         // Ignore boxes with low threshold.
         std::vector<ModelPrediction>::iterator iter;
-        for (iter = predictionsVector.begin(); iter != predictionsVector.end(); ) {
+        for (iter = predictionsVector.begin(); iter != predictionsVector.end();) {
             if (iter->confidence < NMS_CONFIDENCE_THRESHOLD)
                 iter = predictionsVector.erase(iter);
             else
@@ -235,15 +225,12 @@ ObjectDetectionAndClassification::precisionRecallNMS(std::string outputDir, std:
 
         // std::sort(predictionsVector.begin(), predictionsVector.end(), greater_than_key());
 
-        for (auto &&prediction : predictionsVector)
-        {
+        for (auto &&prediction : predictionsVector) {
             cv::rectangle(testImageNms1Clone, prediction.boundingBox, gtColors[prediction.label]);
             // Check if NMS already has a cluster which shares NMS_IOU_THRESHOLD area with current prediction.bbox and both have same label.
             bool clusterFound = false;
-            for (auto &&nmsCluster : predictionsNMSVector)
-            {
-                if (nmsCluster.label == prediction.label)
-                { // Only if same label
+            for (auto &&nmsCluster : predictionsNMSVector) {
+                if (nmsCluster.label == prediction.label) { // Only if same label
                     cv::Rect &rect1 = prediction.boundingBox;
                     cv::Rect &rect2 = nmsCluster.boundingBox;
                     float iouScore = ((rect1 & rect2).area() * 1.0f) / ((rect1 | rect2).area());
@@ -290,14 +277,16 @@ ObjectDetectionAndClassification::precisionRecallNMS(std::string outputDir, std:
         // Display all ground truth boxes
         cv::Mat testImageGtClone = testImage.clone(); // For drawing bbox
         for (size_t j = 0; j < groundTruthPredictions.size(); j++)
-            cv::rectangle(testImageGtClone, groundTruthPredictions.at(j).boundingBox, gtColors[groundTruthPredictions.at(j).label]);
+            cv::rectangle(testImageGtClone, groundTruthPredictions.at(j).boundingBox,
+                          gtColors[groundTruthPredictions.at(j).label]);
         cv::imshow("Ground Truth", testImageGtClone);
         cv::waitKey(500);
 #endif
 
         // Write NMS output image
         std::stringstream nmsOutputFilePath;
-        nmsOutputFilePath << outputDir << std::setfill('0') << std::setw(4) << i << "-NMSOutput" << "-Confidence-" << NMS_CONFIDENCE_THRESHOLD << ".png";
+        nmsOutputFilePath << outputDir << std::setfill('0') << std::setw(4) << i << "-NMSOutput" << "-Confidence-"
+                          << NMS_CONFIDENCE_THRESHOLD << ".png";
         std::string nmsOutputFilePathStr = nmsOutputFilePath.str();
         cv::imwrite(nmsOutputFilePathStr, testImageNmsClone);
 
@@ -305,29 +294,25 @@ ObjectDetectionAndClassification::precisionRecallNMS(std::string outputDir, std:
 #ifdef DISPLAY
         cv::waitKey(0);
 #endif
-        std::vector<float> tpFpFn = computeTpFpFn(predictionsNMSVector, groundTruthPredictions);
+        std::vector<float> truePositiveFalsePositive = computeTruePositiveFalsePositive(predictionsNMSVector,
+                groundTruthPredictions, 0.5f);
+        std::vector<float> falseNegativeTrueNegative = computeTrueNegativeFalseNegative(predictionsNMSVector,
+                groundTruthPredictions, 0.5f);
 #ifdef DISPLAY
         cv::waitKey(0);
 #endif
-        tp += tpFpFn[0];
-        fp += tpFpFn[1];
-        fn += tpFpFn[2];
+        truePositive += truePositiveFalsePositive[0];
+        falsePositive += truePositiveFalsePositive[1];
+        falseNegative += falseNegativeTrueNegative[0];
     }
 
-    float precision = tp / (tp + fp);
-    float recall = tp / (tp + fn);
+    float precision = truePositive / (truePositive + falsePositive);
+    float recall = truePositive / (truePositive + falseNegative);
     predictionsFile.close();
     std::vector<float> precisionRecallValue;
     precisionRecallValue.push_back(precision);
     precisionRecallValue.push_back(recall);
     return precisionRecallValue;
-    return std::vector<float>();
-}
-
-ObjectDetectionAndClassification::ObjectDetectionAndClassification(float max, float min, float confidence) {
-    this->NMS_MAX_IOU_THRESHOLD = max;
-    this->NMS_MIN_IOU_THRESHOLD = min;
-    this->NMS_CONFIDENCE_THRESHOLD = confidence;
 }
 
 //todo
@@ -354,21 +339,22 @@ void ObjectDetectionAndClassification::evaluate_metrics(std::string outputDir,
 
     std::cout << "\n";
     std::ofstream outputFile;
-    outputFile.open(outputDir+"predictionRecallValues.csv");
-    if (!outputFile.is_open())
-    {
-        std::cout << "Failed to open" << outputDir+"predictionRecallValues.csv" << std::endl;
+    outputFile.open(outputDir + "predictionRecallValues.csv");
+    if (!outputFile.is_open()) {
+        std::cout << "Failed to open" << outputDir + "predictionRecallValues.csv" << std::endl;
         exit(-1);
     }
-    outputFile << "Precision,Recall"<< std::endl;
-    for (int confidence = 0; confidence <= 100; confidence += 5) // If float is used, it may overshoot 1.0 - floating point error
+    outputFile << "Precision,Recall" << std::endl;
+    for (int confidence = 0;
+         confidence <= 100; confidence += 5) // If float is used, it may overshoot 1.0 - floating point error
     {
         float NMS_CONFIDENCE_THRESHOLD = confidence / 100.0f;
         std::vector<float> precisionRecallValue = precisionRecallNMS(outputDir, testImagesLabelVector,
                                                                      labelAndBoundingBoxes, gtColors,
                                                                      NMS_MIN_IOU_THRESHOLD, NMS_MAX_IOU_THRESHOLD,
                                                                      NMS_CONFIDENCE_THRESHOLD);
-        std::cout << "NMS_CONFIDENCE_THRESHOLD: " << NMS_CONFIDENCE_THRESHOLD << ", Precision: " << precisionRecallValue[0] << ", Recall: " << precisionRecallValue[1] << std::endl;
+        std::cout << "NMS_CONFIDENCE_THRESHOLD: " << NMS_CONFIDENCE_THRESHOLD << ", Precision: "
+                  << precisionRecallValue[0] << ", Recall: " << precisionRecallValue[1] << std::endl;
         outputFile << precisionRecallValue[0] << "," << precisionRecallValue[1] << std::endl;
     }
     outputFile.close();
@@ -381,19 +367,18 @@ void ObjectDetectionAndClassification::computeBoundingBoxAndConfidence(cv::Ptr<R
                                                                        std::vector<std::pair<int, cv::Mat>> &testImagesLabelVector,
                                                                        std::vector<std::vector<std::vector<int>>> &labelAndBoundingBoxes,
                                                                        int strideX, int strideY, cv::Size winStride,
-                                                                       cv::Size padding, cv::Scalar *gtColors, float scaleFactor,
+                                                                       cv::Size padding, cv::Scalar *gtColors,
+                                                                       float scaleFactor,
                                                                        std::string outputDir,
                                                                        cv::Size winSize = cv::Size(128, 128)) {
     std::ofstream predictionsFile(outputDir + "predictions.txt");
-    if (!predictionsFile.is_open())
-    {
+    if (!predictionsFile.is_open()) {
         std::cout << "Failed to open" << outputDir + "predictions.txt" << std::endl;
         exit(-1);
     }
 
-    for (size_t i = 0; i < testImagesLabelVector.size(); i++)
-    {
-        std::cout << "Running prediction on " << (i+1) << " of " << testImagesLabelVector.size() << " images.\n";
+    for (size_t i = 0; i < testImagesLabelVector.size(); i++) {
+        std::cout << "Running prediction on " << (i + 1) << " of " << testImagesLabelVector.size() << " images.\n";
         predictionsFile << i << std::endl; // Prediction file format: Starts with File number
         cv::Mat testImage = testImagesLabelVector.at(i).second;
 
@@ -401,14 +386,14 @@ void ObjectDetectionAndClassification::computeBoundingBoxAndConfidence(cv::Ptr<R
         // int minBoundingBoxSideLength = 70, maxBoundingBoxSideLength = 230;
         int minBoundingBoxSideLength = 1000, maxBoundingBoxSideLength = -1;
         std::vector<std::vector<int>> imageLabelsAndBoundingBoxes = labelAndBoundingBoxes.at(i);
-        predictionsFile << imageLabelsAndBoundingBoxes.size() << std::endl; // Prediction file format: Next is Number of Ground Truth Boxes - Say K
-        for (size_t j = 0; j < imageLabelsAndBoundingBoxes.size(); j++)
-        {
+        predictionsFile << imageLabelsAndBoundingBoxes.size()
+                        << std::endl; // Prediction file format: Next is Number of Ground Truth Boxes - Say K
+        for (size_t j = 0; j < imageLabelsAndBoundingBoxes.size(); j++) {
             std::vector<int> bbox = imageLabelsAndBoundingBoxes.at(j); // fixme - rename
             cv::Rect rect(bbox[1], bbox[2], bbox[3] - bbox[1], bbox[4] - bbox[2]);
             // Prediction file format: Next is K Lines of Labels and cv::Rect
             predictionsFile << imageLabelsAndBoundingBoxes.at(j).at(0) << " " << rect.x <<
-            " " << rect.y << " " << rect.height << " " << rect.width << std::endl;
+                            " " << rect.y << " " << rect.height << " " << rect.width << std::endl;
             minBoundingBoxSideLength = std::min(minBoundingBoxSideLength, std::min(rect.width, rect.height));
             maxBoundingBoxSideLength = std::max(maxBoundingBoxSideLength, std::max(rect.width, rect.height));
         }
@@ -417,14 +402,11 @@ void ObjectDetectionAndClassification::computeBoundingBoxAndConfidence(cv::Ptr<R
 
         int boundingBoxSideLength = minBoundingBoxSideLength;
         std::vector<ModelPrediction> predictionsVector; // Output of Hog Detection
-        while (true)
-        {
+        while (true) {
             std::cout << "Processing at bounding box side length: " << boundingBoxSideLength << '\n';
             // Sliding window with stride
-            for (size_t row = 0; row < testImage.rows - boundingBoxSideLength; row += strideY)
-            {
-                for (size_t col = 0; col < testImage.cols - boundingBoxSideLength; col += strideX)
-                {
+            for (size_t row = 0; row < testImage.rows - boundingBoxSideLength; row += strideY) {
+                for (size_t col = 0; col < testImage.cols - boundingBoxSideLength; col += strideX) {
                     cv::Rect rect(col, row, boundingBoxSideLength, boundingBoxSideLength);
                     cv::Mat rectImage = testImage(rect);
 
@@ -447,12 +429,11 @@ void ObjectDetectionAndClassification::computeBoundingBoxAndConfidence(cv::Ptr<R
 
         // Prediction file format: Next is N Lines of Labels, cv::Rect and confidence
         predictionsFile << predictionsVector.size() << std::endl;
-        for (auto &&prediction : predictionsVector)
-        {
+        for (auto &&prediction : predictionsVector) {
             // Prediction file format: Next is N Lines of Labels and cv::Rect
             predictionsFile << prediction.label << " " << prediction.boundingBox.x << " " <<
-            prediction.boundingBox.y << " " << prediction.boundingBox.height << " " <<
-            prediction.boundingBox.width << " " << prediction.confidence << std::endl;
+                            prediction.boundingBox.y << " " << prediction.boundingBox.height << " " <<
+                            prediction.boundingBox.width << " " << prediction.confidence << std::endl;
         }
 
         cv::Mat testImageClone = testImage.clone(); // For drawing bbox
@@ -462,8 +443,7 @@ void ObjectDetectionAndClassification::computeBoundingBoxAndConfidence(cv::Ptr<R
         // Draw bounding box on the test image using ground truth
         imageLabelsAndBoundingBoxes = labelAndBoundingBoxes.at(i);
         cv::Mat testImageGtClone = testImage.clone(); // For drawing bbox
-        for (size_t j = 0; j < imageLabelsAndBoundingBoxes.size(); j++)
-        {
+        for (size_t j = 0; j < imageLabelsAndBoundingBoxes.size(); j++) {
             std::vector<int> bbox = imageLabelsAndBoundingBoxes.at(j);
             cv::Rect rect(bbox[1], bbox[2], bbox[3] - bbox[1], bbox[4] - bbox[2]);
             cv::rectangle(testImageGtClone, rect, gtColors[bbox[0]]);
@@ -501,8 +481,17 @@ void ObjectDetectionAndClassification::solver(float subsetPercentage = 50.0f,
     /*float subsetPercentage = 50.0f;
     bool underSampling = false;
     bool augment = true;*/
+
+    auto timeNow = std::chrono::system_clock::now();
+    std::time_t time = std::chrono::system_clock::to_time_t(timeNow);
+    std::string loadedModelTime = "";
+    //load model
+    //randomForest->setTrees(RandomForest::loadModel("../output/models/NMS-treeCount-" + std::to_string(numberOfDTrees) + loadedModelTime, numberOfDTrees));
+    //comment it when loading instead of traininf
     randomForest->train(trainingImagesLabelVector, subsetPercentage, winStride, padding, underSampling, augment,
-                        winSize, false, false);
+                        winSize, false, true);
+    //save the model for reuse
+    randomForest->saveModel("../output/models/NMS-treeCount-" + std::to_string(numberOfDTrees) + std::to_string(time));
 
     // For each test image
     std::vector<std::pair<int, cv::Mat>> testImagesLabelVector = loadTestDataset();
@@ -523,18 +512,25 @@ void ObjectDetectionAndClassification::solver(float subsetPercentage = 50.0f,
 
     // Loop over multiple values.
     std::ostringstream s;
-    s << PROJ_DIR << "/output/Trees-" << numberOfDTrees << "_subsetPercent-" << ((int)subsetPercentage)
+    s << PROJ_DIR << "/output/Trees-" << numberOfDTrees << "_subsetPercent-" << ((int) subsetPercentage)
       << "-scaleFactor_" << scaleFactor << "-undersampling_" << underSampling << "-augment_" << augment
       << "-strideX_" << strideX << "-strideY_" << strideY << "-NMS_MIN_" << NMS_MIN_IOU_THRESHOLD
       << "-NMS_Max_" << NMS_MAX_IOU_THRESHOLD << "-NMS_CONF_" << NMS_CONFIDENCE_THRESHOLD << "/";
     std::string outputDir = s.str();
     //std::cout<<outputDir<<std::endl;
     bool created_dr = cv::utils::fs::createDirectories(outputDir);
-    std::cout<<created_dr<<std::endl;
-    computeBoundingBoxAndConfidence(randomForest, testImagesLabelVector, labelAndBoundingBoxes, strideX, strideY, winStride, padding, gtColors,
-               scaleFactor, outputDir, winSize);
+    std::cout << created_dr << std::endl;
+    computeBoundingBoxAndConfidence(randomForest, testImagesLabelVector, labelAndBoundingBoxes, strideX, strideY,
+                                    winStride, padding, gtColors,
+                                    scaleFactor, outputDir, winSize);
 }
 
 ObjectDetectionAndClassification::ObjectDetectionAndClassification() = default;
 
 ObjectDetectionAndClassification::~ObjectDetectionAndClassification() = default;
+
+ObjectDetectionAndClassification::ObjectDetectionAndClassification(float max, float min, float confidence) {
+    this->NMS_MAX_IOU_THRESHOLD = max;
+    this->NMS_MIN_IOU_THRESHOLD = min;
+    this->NMS_CONFIDENCE_THRESHOLD = confidence;
+}

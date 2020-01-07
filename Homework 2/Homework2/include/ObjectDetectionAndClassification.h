@@ -22,8 +22,13 @@ public:
 
     std::vector<std::vector<std::vector<int>>> getGroundTruth();
 
-    std::vector<float> computeTpFpFn(std::vector<ModelPrediction> predictionsNMSVector,
-                                     std::vector<ModelPrediction> groundTruthPredictions);
+    std::vector<float> computeTruePositiveFalsePositive(const std::vector<ModelPrediction>& predictionsAfterNMS,
+                                             const std::vector<ModelPrediction>& groundTruth,
+                                             float thresholdIOU);
+
+    std::vector<float> computeTrueNegativeFalseNegative(const std::vector<ModelPrediction>& predictionsAfterNMS,
+                                                        const std::vector<ModelPrediction>& groundTruth,
+                                                        float thresholdIOU);
 
     std::vector<float> precisionRecallNMS(std::string outputDir,
                                           std::vector<std::pair<int, cv::Mat>> &testImagesLabelVector,
