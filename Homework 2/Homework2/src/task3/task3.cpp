@@ -15,7 +15,7 @@ int main(){
     cout << "Object Detection" << endl;
 
     int numClasses = 4;
-    int numTrees = 2;
+    int numTrees = 60;
     cv::Size winSize(128, 128);
 
     float scaleFactor = 1.10f;
