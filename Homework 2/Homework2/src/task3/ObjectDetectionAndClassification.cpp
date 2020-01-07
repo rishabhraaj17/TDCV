@@ -332,51 +332,39 @@ ObjectDetectionAndClassification::precisionRecallNMS(std::string outputDir,
     return precisionRecallValue;
 }
 
-//todo
 void ObjectDetectionAndClassification::evaluate_metrics(std::string outputDir,
                                                         std::vector<std::pair<int, cv::Mat>> &testImagesLabelVector,
                                                         std::vector<std::vector<std::vector<int>>> &labelAndBoundingBoxes) {
-    cv::Scalar gtColors[4];
-    gtColors[0] = cv::Scalar(255, 0, 0);
-    gtColors[1] = cv::Scalar(0, 255, 0);
-    gtColors[2] = cv::Scalar(0, 0, 255);
-    gtColors[3] = cv::Scalar(255, 255, 0);
-
-    float NMS_MAX_IOU_THRESHOLD = 0.5f; // If above this threshold, merge the two bounding boxes.
-    float NMS_MIN_IOU_THRESHOLD = 0.1f; // If above this threshold, drop the bounding boxes with lower confidence.
-    // float NMS_CONFIDENCE_THRESHOLD = 0.75f;
-
-#ifdef DISPLAY
+    #ifdef DISPLAY
     cv::namedWindow("TestImageOutput");
     cv::namedWindow("TestImage NMS Output");
     cv::namedWindow("Ground Truth");
     cv::namedWindow("TestImage NMS BBox Filter");
     cv::waitKey(0);
-#endif
-
-    std::cout << "\n";
-    std::ofstream outputFile;
-    outputFile.open(outputDir + "predictionRecallValues.csv");
-    if (!outputFile.is_open()) {
-        std::cout << "Failed to open" << outputDir + "predictionRecallValues.csv" << std::endl;
+    #endif
+    std::ofstream metricLogCSV;
+    metricLogCSV.open(outputDir + "metrics.csv");
+    if (!metricLogCSV.is_open()) {
+        std::cout << "Failed to open" << outputDir + "metrics.csv" << std::endl;
         exit(-1);
     }
-    outputFile << "Precision,Recall" << std::endl;
+    metricLogCSV << "Precision,Recall" << std::endl;
+    std::cout << "\nNMS_CONFIDENCE_THRESHOLD " << "      Precision           "
+              "Recall " << std::endl;
     for (int confidence = 0;
-         confidence <= 100; confidence += 5) // If float is used, it may overshoot 1.0 - floating point error
+         confidence <= 100; confidence += 5)
     {
-        float NMS_CONFIDENCE_THRESHOLD = confidence / 100.0f;
+        this->NMS_CONFIDENCE_THRESHOLD = confidence / 100.0f;
         std::vector<float> precisionRecallValue = precisionRecallNMS(outputDir, testImagesLabelVector,
-                                                                     labelAndBoundingBoxes, gtColors,
-                                                                     NMS_MIN_IOU_THRESHOLD, NMS_MAX_IOU_THRESHOLD,
-                                                                     NMS_CONFIDENCE_THRESHOLD);
-        std::cout << "NMS_CONFIDENCE_THRESHOLD: " << NMS_CONFIDENCE_THRESHOLD << ", Precision: "
-                  << precisionRecallValue[0] << ", Recall: " << precisionRecallValue[1] << std::endl;
-        outputFile << precisionRecallValue[0] << "," << precisionRecallValue[1] << std::endl;
-    }
-    outputFile.close();
+                                                                     labelAndBoundingBoxes, this->bBoxColors,
+                                                                     this->NMS_MIN_IOU_THRESHOLD,
+                                                                     this->NMS_MAX_IOU_THRESHOLD,
+                                                                     this->NMS_CONFIDENCE_THRESHOLD);
+        metricLogCSV << precisionRecallValue[0] << "," << precisionRecallValue[1] << std::endl;
 
-    std::cout << "\n";
+        std::cout << "             " << NMS_CONFIDENCE_THRESHOLD << "             "  << precisionRecallValue[0] << "             "  << precisionRecallValue[1] << std::endl;
+    }
+    metricLogCSV.close();
 }
 
 //todo
