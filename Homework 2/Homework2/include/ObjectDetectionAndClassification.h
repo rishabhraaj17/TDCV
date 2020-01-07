@@ -20,7 +20,7 @@ public:
 
     std::vector<std::pair<int, cv::Mat>> loadTestDataset();
 
-    std::vector<std::vector<std::vector<int>>> getLabelAndBoundingBoxes();
+    std::vector<std::vector<std::vector<int>>> getGroundTruth();
 
     std::vector<float> computeTpFpFn(std::vector<ModelPrediction> predictionsNMSVector,
                                      std::vector<ModelPrediction> groundTruthPredictions);

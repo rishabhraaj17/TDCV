@@ -51,41 +51,43 @@ std::vector<std::pair<int, cv::Mat>> ObjectDetectionAndClassification::loadTestD
     return testDataset;
 }
 
-//todo
-std::vector<std::vector<std::vector<int>>> ObjectDetectionAndClassification::getLabelAndBoundingBoxes() {
-    int numberOfTestImages = 44;
-    std::vector<std::vector<std::vector<int>>> groundTruthBoundingBoxes;
-    for (size_t j = 0; j < numberOfTestImages; j++)
+std::vector<std::vector<std::vector<int>>> ObjectDetectionAndClassification::getGroundTruth() {
+    /**
+     * Parses the ground truth text file and returns vector -- image-objects-labAndBbox
+     */
+    int testImagesPerClassCount = 44;
+    std::vector<std::vector<std::vector<int>>> groundTruthLabelAndBoundingBoxes;
+    for (size_t j = 0; j < testImagesPerClassCount; j++)
     {
-        std::stringstream gtFilePath;
-        gtFilePath << std::string(PROJ_DIR) << "/data/task3/gt/" << std::setfill('0') << std::setw(4) << j << ".gt.txt";
-        std::string gtFilePathStr = gtFilePath.str();
+        std::stringstream path;
+        path << std::string(PROJ_DIR) << "/data/task3/gt/" << std::setfill('0') << std::setw(4) << j << ".gt.txt";
+        std::string pathStr = path.str();
 
-        std::fstream gtFile;
-        gtFile.open(gtFilePathStr);
-        if (!gtFile.is_open())
+        std::fstream groundTruth;
+        groundTruth.open(pathStr);
+        if (!groundTruth.is_open())
         {
-            std::cout << "Failed to open file: " << gtFilePathStr << std::endl;
+            std::cout << "Failed to open file: " << pathStr << std::endl;
             exit(-1);
         }
 
         std::string line;
-        std::vector<std::vector<int>> groundTruthBoundingBoxesPerImage;
-        while (std::getline(gtFile, line))
+        std::vector<std::vector<int>> boundingBoxesPerImage;
+        while (std::getline(groundTruth, line))
         {
             std::istringstream in(line);
-            std::vector<int> groundTruthLabelAndBoundingBox(5);
+            std::vector<int> labelAndBoundingBox(5);
             int temp;
             for (size_t i = 0; i < 5; i++)
             {
                 in >> temp;
-                groundTruthLabelAndBoundingBox.at(i) = temp;
+                labelAndBoundingBox.at(i) = temp;
             }
-            groundTruthBoundingBoxesPerImage.push_back(groundTruthLabelAndBoundingBox);
+            boundingBoxesPerImage.push_back(labelAndBoundingBox);
         }
-        groundTruthBoundingBoxes.push_back(groundTruthBoundingBoxesPerImage);
+        groundTruthLabelAndBoundingBoxes.push_back(boundingBoxesPerImage);
     }
-    return groundTruthBoundingBoxes;
+    return groundTruthLabelAndBoundingBoxes;
 }
 
 //todo
@@ -485,7 +487,7 @@ void ObjectDetectionAndClassification::solver(float subsetPercentage = 50.0f,
                                               bool underSampling = false,
                                               bool augment = true) {
     std::vector<std::pair<int, cv::Mat>> trainingImagesLabelVector = loadTrainDataset();
-    std::vector<std::vector<std::vector<int>>> labelAndBoundingBoxes = getLabelAndBoundingBoxes();
+    std::vector<std::vector<std::vector<int>>> labelAndBoundingBoxes = getGroundTruth();
 
     // Create model
     int numberOfClasses = 4;
