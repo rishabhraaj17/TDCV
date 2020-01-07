@@ -312,9 +312,9 @@ ObjectDetectionAndClassification::precisionRecallNMS(std::string outputDir,
         cv::waitKey(0);
 #endif
         std::vector<float> truePositiveFalsePositive = computeTruePositiveFalsePositive(predictionsNMSVector,
-                groundTruthPredictions, 0.5f);
+                                                                                        groundTruthPredictions, 0.5f);
         std::vector<float> falseNegativeTrueNegative = computeTrueNegativeFalseNegative(predictionsNMSVector,
-                groundTruthPredictions, 0.5f);
+                                                                                        groundTruthPredictions, 0.5f);
 #ifdef DISPLAY
         cv::waitKey(0);
 #endif
@@ -332,73 +332,80 @@ ObjectDetectionAndClassification::precisionRecallNMS(std::string outputDir,
     return precisionRecallValue;
 }
 
-void ObjectDetectionAndClassification::evaluate_metrics(std::string outputDir,
-                                                        std::vector<std::pair<int, cv::Mat>> &testImagesLabelVector,
-                                                        std::vector<std::vector<std::vector<int>>> &labelAndBoundingBoxes) {
-    #ifdef DISPLAY
+void ObjectDetectionAndClassification::evaluate_metrics(std::string savePath,
+                                                        std::vector<std::pair<int, cv::Mat>> &testDataset,
+                                                        std::vector<std::vector<std::vector<int>>> &groundTruth) {
+#ifdef DISPLAY
     cv::namedWindow("TestImageOutput");
     cv::namedWindow("TestImage NMS Output");
     cv::namedWindow("Ground Truth");
     cv::namedWindow("TestImage NMS BBox Filter");
     cv::waitKey(0);
-    #endif
+#endif
     std::ofstream metricLogCSV;
-    metricLogCSV.open(outputDir + "metrics.csv");
+    metricLogCSV.open(savePath + "metrics.csv");
     if (!metricLogCSV.is_open()) {
-        std::cout << "Failed to open" << outputDir + "metrics.csv" << std::endl;
+        std::cout << "Failed to open" << savePath + "metrics.csv" << std::endl;
         exit(-1);
     }
     metricLogCSV << "Precision,Recall" << std::endl;
     std::cout << "\nNMS_CONFIDENCE_THRESHOLD " << "      Precision           "
-              "Recall " << std::endl;
+                                                  "Recall " << std::endl;
     for (int confidence = 0;
-         confidence <= 100; confidence += 5)
-    {
+         confidence <= 100; confidence += 5) {
         this->NMS_CONFIDENCE_THRESHOLD = confidence / 100.0f;
-        std::vector<float> precisionRecallValue = precisionRecallNMS(outputDir, testImagesLabelVector,
-                                                                     labelAndBoundingBoxes, this->bBoxColors,
+        std::vector<float> precisionRecallValue = precisionRecallNMS(savePath, testDataset,
+                                                                     groundTruth, this->bBoxColors,
                                                                      this->NMS_MIN_IOU_THRESHOLD,
                                                                      this->NMS_MAX_IOU_THRESHOLD,
                                                                      this->NMS_CONFIDENCE_THRESHOLD);
         metricLogCSV << precisionRecallValue[0] << "," << precisionRecallValue[1] << std::endl;
 
-        std::cout << "             " << NMS_CONFIDENCE_THRESHOLD << "             "  << precisionRecallValue[0] << "             "  << precisionRecallValue[1] << std::endl;
+        std::cout << "             " << NMS_CONFIDENCE_THRESHOLD << "             " << precisionRecallValue[0]
+                  << "             " << precisionRecallValue[1] << std::endl;
     }
     metricLogCSV.close();
 }
 
 //todo
 void ObjectDetectionAndClassification::computeBoundingBoxAndConfidence(cv::Ptr<RandomForest> &randomForest,
-                                                                       std::vector<std::pair<int, cv::Mat>> &testImagesLabelVector,
-                                                                       std::vector<std::vector<std::vector<int>>> &labelAndBoundingBoxes,
-                                                                       int strideX, int strideY, cv::Size winStride,
-                                                                       cv::Size padding, cv::Scalar *gtColors,
-                                                                       float scaleFactor,
-                                                                       std::string outputDir,
-                                                                       cv::Size winSize = cv::Size(128, 128)) {
-    std::ofstream predictionsFile(outputDir + "predictions.txt");
-    if (!predictionsFile.is_open()) {
-        std::cout << "Failed to open" << outputDir + "predictions.txt" << std::endl;
+                                                                       std::vector<std::pair<int, cv::Mat>> &testDataset,
+                                                                       std::vector<std::vector<std::vector<int>>> &groundTruth,
+                                                                       const cv::Size &winStride,
+                                                                       const cv::Size &padding, cv::Scalar *gtColors,
+                                                                       const std::string &savePath,
+                                                                       const cv::Size &_winSize = cv::Size(128, 128)) {
+    /**
+     * Format :
+     * Image Number, e.g 0
+     * Count of ground truth bounding boxes, e.g 3
+     * Ground Truth Labels and Bounding Box for next count lines
+     * Count of predicted bounding boxes
+     * Predicted Labels, Bounding Box and confidence for next lines until next image
+     */
+    std::ofstream modelPredictions(savePath + "predictions.txt");
+    if (!modelPredictions.is_open()) {
+        std::cout << "Failed to open" << savePath + "predictions.txt" << std::endl;
         exit(-1);
     }
 
-    for (size_t i = 0; i < testImagesLabelVector.size(); i++) {
-        std::cout << "Running prediction on " << (i + 1) << " of " << testImagesLabelVector.size() << " images.\n";
-        predictionsFile << i << std::endl; // Prediction file format: Starts with File number
-        cv::Mat testImage = testImagesLabelVector.at(i).second;
+    for (size_t i = 0; i < testDataset.size(); i++) {
+        std::cout << "\nPrediction : Image - " << i << ". Total Images : " << testDataset.size() << std::endl;
+        modelPredictions << i << std::endl;
+        cv::Mat currentTestImage = testDataset.at(i).second;
 
         // Run testclean up 2 -- todo :experiment with hyperparamsing on various bounding boxes of different scales
         // int minBoundingBoxSideLength = 70, maxBoundingBoxSideLength = 230;
         int minBoundingBoxSideLength = 1000, maxBoundingBoxSideLength = -1;
-        std::vector<std::vector<int>> imageLabelsAndBoundingBoxes = labelAndBoundingBoxes.at(i);
-        predictionsFile << imageLabelsAndBoundingBoxes.size()
-                        << std::endl; // Prediction file format: Next is Number of Ground Truth Boxes - Say K
-        for (size_t j = 0; j < imageLabelsAndBoundingBoxes.size(); j++) {
-            std::vector<int> bbox = imageLabelsAndBoundingBoxes.at(j); // fixme - rename
-            cv::Rect rect(bbox[1], bbox[2], bbox[3] - bbox[1], bbox[4] - bbox[2]);
-            // Prediction file format: Next is K Lines of Labels and cv::Rect
-            predictionsFile << imageLabelsAndBoundingBoxes.at(j).at(0) << " " << rect.x <<
-                            " " << rect.y << " " << rect.height << " " << rect.width << std::endl;
+        std::vector<std::vector<int>> gt = groundTruth.at(i);
+        modelPredictions << gt.size() << std::endl;
+
+        for (auto &g : gt) {
+            std::vector<int> boundingBox = g;
+            cv::Rect rect(boundingBox[1], boundingBox[2], boundingBox[3] - boundingBox[1],
+                          boundingBox[4] - boundingBox[2]);
+            modelPredictions << g.at(0) << " " << rect.x << " " << rect.y << " " << rect.height << " " << rect.width
+                             << std::endl;
             minBoundingBoxSideLength = std::min(minBoundingBoxSideLength, std::min(rect.width, rect.height));
             maxBoundingBoxSideLength = std::max(maxBoundingBoxSideLength, std::max(rect.width, rect.height));
         }
@@ -406,71 +413,67 @@ void ObjectDetectionAndClassification::computeBoundingBoxAndConfidence(cv::Ptr<R
         maxBoundingBoxSideLength += 10;
 
         int boundingBoxSideLength = minBoundingBoxSideLength;
-        std::vector<ModelPrediction> predictionsVector; // Output of Hog Detection
+        std::vector<ModelPrediction> predictions; // Output of Hog Detection
         while (true) {
             std::cout << "Processing at bounding box side length: " << boundingBoxSideLength << '\n';
             // Sliding window with stride
-            for (size_t row = 0; row < testImage.rows - boundingBoxSideLength; row += strideY) {
-                for (size_t col = 0; col < testImage.cols - boundingBoxSideLength; col += strideX) {
+            for (size_t row = 0; row < currentTestImage.rows - boundingBoxSideLength; row += this->strideY) {
+                for (size_t col = 0; col < currentTestImage.cols - boundingBoxSideLength; col += this->strideX) {
                     cv::Rect rect(col, row, boundingBoxSideLength, boundingBoxSideLength);
-                    cv::Mat rectImage = testImage(rect);
+                    cv::Mat rectImage = currentTestImage(rect);
 
                     // Predict on subimage
-                    ModelPrediction prediction = randomForest->predictPerImage(rectImage, winStride, padding, winSize);
-                    if (prediction.label != 3) // Ignore Background class.
-                    {
+                    ModelPrediction prediction = randomForest->predictPerImage(rectImage, winStride, padding, _winSize);
+                    if (prediction.label != 3) {
                         prediction.boundingBox = rect;
-                        predictionsVector.push_back(prediction);
+                        predictions.push_back(prediction);
                     }
                 }
             }
 
             if (boundingBoxSideLength == maxBoundingBoxSideLength) // Maximum Bounding Box Size from ground truth
                 break;
-            boundingBoxSideLength = (boundingBoxSideLength * scaleFactor + 0.5); // fixme acc to suggestion
+            boundingBoxSideLength = lround(boundingBoxSideLength * this->scaleFactor + 0.5); // added lround
             if (boundingBoxSideLength > maxBoundingBoxSideLength)
                 boundingBoxSideLength = maxBoundingBoxSideLength;
         }
 
-        // Prediction file format: Next is N Lines of Labels, cv::Rect and confidence
-        predictionsFile << predictionsVector.size() << std::endl;
-        for (auto &&prediction : predictionsVector) {
-            // Prediction file format: Next is N Lines of Labels and cv::Rect
-            predictionsFile << prediction.label << " " << prediction.boundingBox.x << " " <<
-                            prediction.boundingBox.y << " " << prediction.boundingBox.height << " " <<
-                            prediction.boundingBox.width << " " << prediction.confidence << std::endl;
+        modelPredictions << predictions.size() << std::endl;
+        for (auto &&prediction : predictions) {
+            modelPredictions << prediction.label << " " << prediction.boundingBox.x << " " <<
+                             prediction.boundingBox.y << " " << prediction.boundingBox.height << " " <<
+                             prediction.boundingBox.width << " " << prediction.confidence << std::endl;
         }
 
-        cv::Mat testImageClone = testImage.clone(); // For drawing bbox
-        for (auto &&prediction : predictionsVector)
-            cv::rectangle(testImageClone, prediction.boundingBox, gtColors[prediction.label]);
+        // save for visualization
+        cv::Mat predictionImageVis = currentTestImage.clone();
+        for (auto &&prediction : predictions)
+            cv::rectangle(predictionImageVis, prediction.boundingBox, gtColors[prediction.label]);
 
-        // Draw bounding box on the test image using ground truth
-        imageLabelsAndBoundingBoxes = labelAndBoundingBoxes.at(i);
-        cv::Mat testImageGtClone = testImage.clone(); // For drawing bbox
-        for (size_t j = 0; j < imageLabelsAndBoundingBoxes.size(); j++) {
-            std::vector<int> bbox = imageLabelsAndBoundingBoxes.at(j);
-            cv::Rect rect(bbox[1], bbox[2], bbox[3] - bbox[1], bbox[4] - bbox[2]);
-            cv::rectangle(testImageGtClone, rect, gtColors[bbox[0]]);
+        gt = groundTruth.at(i);
+        cv::Mat groundTruthImageVis = currentTestImage.clone();
+        for (auto bBox : gt) {
+            cv::Rect rect(bBox[1], bBox[2], bBox[3] - bBox[1], bBox[4] - bBox[2]);
+            cv::rectangle(groundTruthImageVis, rect, gtColors[bBox[0]]);
         }
 
-        std::stringstream modelOutputFilePath;
-        modelOutputFilePath << outputDir << std::setfill('0') << std::setw(4) << i << "-ModelOutput.png";
-        std::string modelOutputFilePathStr = modelOutputFilePath.str();
-        cv::imwrite(modelOutputFilePathStr, testImageClone);
+        std::stringstream predictionPath;
+        predictionPath << savePath << std::setfill('0') << std::setw(4) << i << "_predictions.png";
+        std::string predictionPathStr = predictionPath.str();
+        cv::imwrite(predictionPathStr, predictionImageVis);
 
-        std::stringstream gtFilePath;
-        gtFilePath << outputDir << std::setfill('0') << std::setw(4) << i << "-GroundTruth.png";
-        std::string gtFilePathStr = gtFilePath.str();
-        cv::imwrite(gtFilePathStr, testImageGtClone);
+        std::stringstream groundTruthPath;
+        groundTruthPath << savePath << std::setfill('0') << std::setw(4) << i << "_groundTruth.png";
+        std::string groundTruthPathStr = groundTruthPath.str();
+        cv::imwrite(groundTruthPathStr, groundTruthImageVis);
     }
-    predictionsFile.close();
+    modelPredictions.close();
 }
 
 void ObjectDetectionAndClassification::solver(std::vector<std::pair<int, cv::Mat>> trainDataset,
                                               std::vector<std::vector<std::vector<int>>> groundTruth,
                                               int numTrees,
-                                              const std::string& savePath,
+                                              const std::string &savePath,
                                               float subsetPercentage = 50.0f,
                                               bool underSampling = false,
                                               bool augment = true,
@@ -489,8 +492,10 @@ void ObjectDetectionAndClassification::solver(std::vector<std::pair<int, cv::Mat
     std::string loadedModelTime = "";
 
     //load model
-    if (loadModelFromDisk){
-        randomForest->setTrees(RandomForest::loadModel("../output/models/NMS-treeCount-" + std::to_string(numTrees) + loadedModelTime, numTrees));
+    if (loadModelFromDisk) {
+        randomForest->setTrees(
+                RandomForest::loadModel("../output/models/NMS-treeCount-" + std::to_string(numTrees) + loadedModelTime,
+                                        numTrees));
     } else {
         randomForest->train(trainDataset, subsetPercentage, winStride, padding, underSampling, augment,
                             winSize, false, true);
@@ -505,9 +510,8 @@ void ObjectDetectionAndClassification::solver(std::vector<std::pair<int, cv::Mat
     std::vector<std::pair<int, cv::Mat>> testDataset = debugTestDataset();
 
     cv::utils::fs::createDirectories(savePath);
-    computeBoundingBoxAndConfidence(randomForest, testDataset, groundTruth, this->strideX, this->strideY,
-                                    winStride, padding, this->bBoxColors,
-                                    scaleFactor, savePath, winSize);
+    computeBoundingBoxAndConfidence(randomForest, testDataset, groundTruth,
+                                    winStride, padding, this->bBoxColors, savePath, winSize);
 
     evaluate_metrics(savePath, testDataset, groundTruth);
 }
@@ -517,7 +521,7 @@ ObjectDetectionAndClassification::ObjectDetectionAndClassification() = default;
 ObjectDetectionAndClassification::~ObjectDetectionAndClassification() = default;
 
 ObjectDetectionAndClassification::ObjectDetectionAndClassification(float max, float min, float confidence,
-                                                                   const cv::Size& winSize,
+                                                                   const cv::Size &winSize,
                                                                    int numClasses,
                                                                    float scaleFactor,
                                                                    int strideX,

@@ -45,19 +45,17 @@ public:
                                           float NMS_MAX_IOU_THRESHOLD,
                                           float NMS_CONFIDENCE_THRESHOLD);
 
-    void evaluate_metrics(std::string outputDir,
-                          std::vector<std::pair<int, cv::Mat>> &testImagesLabelVector,
-                          std::vector<std::vector<std::vector<int>>> &labelAndBoundingBoxes);
+    void evaluate_metrics(std::string savePath,
+                          std::vector<std::pair<int, cv::Mat>> &testDataset,
+                          std::vector<std::vector<std::vector<int>>> &groundTruth);
 
     void computeBoundingBoxAndConfidence(cv::Ptr<RandomForest> &randomForest,
-                                         std::vector<std::pair<int, cv::Mat>> &testImagesLabelVector,
-                                         std::vector<std::vector<std::vector<int>>> &labelAndBoundingBoxes,
-                                         int strideX, int strideY,
-                                         cv::Size winStride, cv::Size padding,
-                                         cv::Scalar *gtColors,
-                                         float scaleFactor,
-                                         std::string outputDir,
-                                         cv::Size winSize);
+                                         std::vector<std::pair<int, cv::Mat>> &testDataset,
+                                         std::vector<std::vector<std::vector<int>>> &groundTruth,
+                                         const cv::Size &winStride,
+                                         const cv::Size &padding, cv::Scalar *gtColors,
+                                         const std::string &savePath,
+                                         const cv::Size &_winSize);
 
     void solver(std::vector<std::pair<int, cv::Mat>> trainDataset,
                 std::vector<std::vector<std::vector<int>>> groundTruth,
