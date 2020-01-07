@@ -9,7 +9,7 @@
 #include <chrono>
 #include <ctime>
 
-#define DISPLAY
+//#define DISPLAY
 
 std::vector<std::pair<int, cv::Mat>> ObjectDetectionAndClassification::loadTrainDataset() {
     std::vector<std::pair<int, cv::Mat>> trainDataset;
@@ -41,7 +41,24 @@ std::vector<std::pair<int, cv::Mat>> ObjectDetectionAndClassification::loadTestD
         imagePath << std::string(PROJ_DIR) << "/data/task3/test/" << std::setfill('0') << std::setw(4) <<
                   j << ".jpg";
         std::string imagePathStr = imagePath.str();
-        std::cout << imagePathStr << std::endl;
+        std::pair<int, cv::Mat> labelImagesTestPair;
+        labelImagesTestPair.first = -1;
+        labelImagesTestPair.second = imread(imagePathStr, cv::IMREAD_UNCHANGED).clone();
+        testDataset.push_back(labelImagesTestPair);
+    }
+    return testDataset;
+}
+
+std::vector<std::pair<int, cv::Mat>> ObjectDetectionAndClassification::debugTestDataset() {
+    std::vector<std::pair<int, cv::Mat>> testDataset;
+    testDataset.reserve(1);
+    int testImagesPerClassCount = 1;
+
+    for (size_t j = 0; j < testImagesPerClassCount; j++) {
+        std::stringstream imagePath;
+        imagePath << std::string(PROJ_DIR) << "/data/task3/test/" << std::setfill('0') << std::setw(4) <<
+                  j << ".jpg";
+        std::string imagePathStr = imagePath.str();
         std::pair<int, cv::Mat> labelImagesTestPair;
         labelImagesTestPair.first = -1;
         labelImagesTestPair.second = imread(imagePathStr, cv::IMREAD_UNCHANGED).clone();
@@ -462,75 +479,70 @@ void ObjectDetectionAndClassification::computeBoundingBoxAndConfidence(cv::Ptr<R
     predictionsFile.close();
 }
 
-//todo
-void ObjectDetectionAndClassification::solver(float subsetPercentage = 50.0f,
+void ObjectDetectionAndClassification::solver(std::vector<std::pair<int, cv::Mat>> trainDataset,
+                                              std::vector<std::vector<std::vector<int>>> groundTruth,
+                                              int numTrees,
+                                              const std::string& savePath,
+                                              float subsetPercentage = 50.0f,
                                               bool underSampling = false,
-                                              bool augment = true) {
-    std::vector<std::pair<int, cv::Mat>> trainingImagesLabelVector = loadTrainDataset();
-    std::vector<std::vector<std::vector<int>>> labelAndBoundingBoxes = getGroundTruth();
+                                              bool augment = true,
+                                              bool doSaveModel,
+                                              bool loadModelFromDisk,
+                                              std::string pathToLoadModel) {
 
-    // Create model
-    int numberOfClasses = 4;
-    int numberOfDTrees = 62;
+    int numClasses = 4;
     cv::Size winSize(128, 128);
-    cv::Ptr<RandomForest> randomForest = RandomForest::createRandomForest(numberOfClasses, numberOfDTrees, winSize);
-
-    // Train the model
     cv::Size winStride(8, 8);
     cv::Size padding(0, 0);
-    /*float subsetPercentage = 50.0f;
-    bool underSampling = false;
-    bool augment = true;*/
+    cv::Ptr<RandomForest> randomForest = RandomForest::createRandomForest(numClasses, numTrees, winSize);
 
     auto timeNow = std::chrono::system_clock::now();
     std::time_t time = std::chrono::system_clock::to_time_t(timeNow);
     std::string loadedModelTime = "";
+
     //load model
-    //randomForest->setTrees(RandomForest::loadModel("../output/models/NMS-treeCount-" + std::to_string(numberOfDTrees) + loadedModelTime, numberOfDTrees));
-    //comment it when loading instead of traininf
-    randomForest->train(trainingImagesLabelVector, subsetPercentage, winStride, padding, underSampling, augment,
-                        winSize, false, true);
+    if (loadModelFromDisk){
+        randomForest->setTrees(RandomForest::loadModel("../output/models/NMS-treeCount-" + std::to_string(numTrees) + loadedModelTime, numTrees));
+    } else {
+        randomForest->train(trainDataset, subsetPercentage, winStride, padding, underSampling, augment,
+                            winSize, false, true);
+    }
     //save the model for reuse
-    randomForest->saveModel("../output/models/NMS-treeCount-" + std::to_string(numberOfDTrees) + std::to_string(time));
+    if (doSaveModel) {
+        randomForest->saveModel("../output/models/NMS-treeCount-" + std::to_string(numTrees) + std::to_string(time));
+    }
 
-    // For each test image
-    std::vector<std::pair<int, cv::Mat>> testImagesLabelVector = loadTestDataset();
-    cv::Scalar gtColors[4];
-    gtColors[0] = cv::Scalar(255, 0, 0);
-    gtColors[1] = cv::Scalar(0, 255, 0);
-    gtColors[2] = cv::Scalar(0, 0, 255);
-    gtColors[3] = cv::Scalar(255, 255, 0);
+    //todo replace real test data later
+    //std::vector<std::pair<int, cv::Mat>> testDataset = loadTestDataset();
+    std::vector<std::pair<int, cv::Mat>> testDataset = debugTestDataset();
 
-    float scaleFactor = 1.10f;
-    int strideX = 2;
-    int strideY = 2;
+    cv::utils::fs::createDirectories(savePath);
+    computeBoundingBoxAndConfidence(randomForest, testDataset, groundTruth, this->strideX, this->strideY,
+                                    winStride, padding, this->bBoxColors,
+                                    scaleFactor, savePath, winSize);
 
-    // NMS-Not used. Each boundin box is dumped to the text file which contains the confidence value. The thresholding is done in evaluation.cpp
-    float NMS_MAX_IOU_THRESHOLD = 0.5f; // If above this threshold, merge the two bounding boxes.
-    float NMS_MIN_IOU_THRESHOLD = 0.1f; // If above this threshold, drop the bounding boxes with lower confidence.
-    float NMS_CONFIDENCE_THRESHOLD = 0.6f;
-
-    // Loop over multiple values.
-    std::ostringstream s;
-    s << PROJ_DIR << "/output/Trees-" << numberOfDTrees << "_subsetPercent-" << ((int) subsetPercentage)
-      << "-scaleFactor_" << scaleFactor << "-undersampling_" << underSampling << "-augment_" << augment
-      << "-strideX_" << strideX << "-strideY_" << strideY << "-NMS_MIN_" << NMS_MIN_IOU_THRESHOLD
-      << "-NMS_Max_" << NMS_MAX_IOU_THRESHOLD << "-NMS_CONF_" << NMS_CONFIDENCE_THRESHOLD << "/";
-    std::string outputDir = s.str();
-    //std::cout<<outputDir<<std::endl;
-    bool created_dr = cv::utils::fs::createDirectories(outputDir);
-    std::cout << created_dr << std::endl;
-    computeBoundingBoxAndConfidence(randomForest, testImagesLabelVector, labelAndBoundingBoxes, strideX, strideY,
-                                    winStride, padding, gtColors,
-                                    scaleFactor, outputDir, winSize);
+    evaluate_metrics(savePath, testDataset, groundTruth);
 }
 
 ObjectDetectionAndClassification::ObjectDetectionAndClassification() = default;
 
 ObjectDetectionAndClassification::~ObjectDetectionAndClassification() = default;
 
-ObjectDetectionAndClassification::ObjectDetectionAndClassification(float max, float min, float confidence) {
+ObjectDetectionAndClassification::ObjectDetectionAndClassification(float max, float min, float confidence,
+                                                                   const cv::Size& winSize,
+                                                                   int numClasses,
+                                                                   float scaleFactor,
+                                                                   int strideX,
+                                                                   int strideY) {
     this->NMS_MAX_IOU_THRESHOLD = max;
     this->NMS_MIN_IOU_THRESHOLD = min;
     this->NMS_CONFIDENCE_THRESHOLD = confidence;
+    this->numClasses = numClasses;
+    this->scaleFactor = scaleFactor;
+    this->strideX = strideX;
+    this->strideY = strideY;
+    this->bBoxColors[0] = cv::Scalar(255, 0, 0);
+    this->bBoxColors[1] = cv::Scalar(0, 255, 0);
+    this->bBoxColors[2] = cv::Scalar(0, 0, 255);
+    this->bBoxColors[3] = cv::Scalar(255, 255, 0);
 }
