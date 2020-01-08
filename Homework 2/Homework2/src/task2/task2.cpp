@@ -58,12 +58,10 @@ singleDecisionTreeClassifier(int num_classes = 6,
 }
 
 
-void randomForestClassifier(int numberOfClasses = 6,
-                            int numberOfDTrees = 70,
-                            const cv::Size& winSize = cv::Size(128, 128),
-                            float subsetPercentage = 50.0f,
-                            bool underSampling = true,
-                            bool augment = false) {
+float
+randomForestClassifier(int numberOfClasses = 6, int numberOfDTrees = 70, const cv::Size &winSize = cv::Size(128, 128),
+                       float subsetPercentage = 50.0f, bool underSampling = true, bool augment = false,
+                       int maximumDepth = 300) {
     //TODO Experiment with the MaxDepth & TreeCount parameters, to see how it affects the performance
 
     cv::Ptr<RandomForest> randomForest = RandomForest::createRandomForest(numberOfClasses, numberOfDTrees, winSize);
@@ -76,7 +74,7 @@ void randomForestClassifier(int numberOfClasses = 6,
     cv::Size padding(0, 0); // padding decreases accuracy
 
     randomForest->train(trainDataset, subsetPercentage, winStride, padding, underSampling, augment, winSize, true,
-                        false);
+                        false, maximumDepth, false, "");
 
     // Predict on test dataset
     float accuracy = 0;
@@ -91,12 +89,13 @@ void randomForestClassifier(int numberOfClasses = 6,
     }
 
     cout << "Random Forest Classification Accuracy : " << (accuracy / testDataset.size()) * 100.0f << "%" << endl;
-
+    cout << "MaxDepth : " << maximumDepth << endl;
     int numberOfTestImages[6] = {10, 10, 10, 10, 10, 10};
     cout << "Per-Class Classification Accuracy ---> " << endl;
     for (size_t i = 0; i < numberOfClasses; i++) {
         cout << "Class " << i << " : " << (accuracyPerClass[i] / numberOfTestImages[i]) * 100.0f << "%" << endl;
     }
+    return (accuracy / testDataset.size()) * 100.0f;
 }
 
 
@@ -108,11 +107,45 @@ int main() {
     cv::Size winSize(128, 128);
     singleDecisionTreeClassifier(numClasses, maxDepth, winSize);
     cout << "\n*********** Random Forest Classification *************************************" << endl;
-    int numberOfDTrees = 60; // TODO: 70 trees gives 90% accuracy
+    int numberOfDTrees = 256; // TODO: 70 trees gives 90% accuracy
     float subsetPercentage = 50.0f;
     bool underSampling = true; //under sample the dataset or not (Class Imbalance)
     bool augment = false;
-    randomForestClassifier(numClasses, numberOfDTrees, winSize, subsetPercentage, underSampling, augment);
-    cout << "\n******************* Task 2 Finished! *************************************" << endl;
+    randomForestClassifier(numClasses, numberOfDTrees, winSize, subsetPercentage, underSampling, augment, 300);
+
+    //*****************************************************************************************************
+    // Experiments with maxDepth and TreeCount
+
+/*    int maximumDepth[7] = {10, 50, 100, 150, 200, 300, 500};
+    string savePath = "../";
+    std::ofstream metricLogCSV;
+    metricLogCSV.open(savePath + "task2_maxDepth.csv");
+    if (!metricLogCSV.is_open()) {
+        std::cout << "Failed to open" << savePath + "task2_maxDepth.csv" << std::endl;
+        exit(-1);
+    }
+    metricLogCSV << "MaxDepth,Accuracy" << std::endl;
+    for (std::size_t i = 0; i < 7; i++){
+        float acc = randomForestClassifier(numClasses, numberOfDTrees, winSize, subsetPercentage, underSampling, augment, maximumDepth[i]);
+        metricLogCSV << maximumDepth[i] << "," << acc << std::endl;
+    }
+    metricLogCSV.close();*/
+//*******************************************************************************************************************
+
+/*    int treeCountList[5] = {8, 16, 32, 64, 128};
+    string savePath = "../";
+    std::ofstream metricLogCSV;
+    metricLogCSV.open(savePath + "task2_trees.csv");
+    if (!metricLogCSV.is_open()) {
+        std::cout << "Failed to open" << savePath + "task2_trees.csv" << std::endl;
+        exit(-1);
+    }
+    metricLogCSV << "TreeCount,Accuracy" << std::endl;
+    for (std::size_t i = 0; i < 5; i++){
+        float acc = randomForestClassifier(numClasses, treeCountList[i], winSize, subsetPercentage, underSampling, augment, 300);
+        metricLogCSV << treeCountList[i] << "," << acc << std::endl;
+    }
+    metricLogCSV.close();
+    cout << "\n******************* Task 2 Finished! *************************************" << endl;*/
     return 0;
 }

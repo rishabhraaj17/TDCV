@@ -40,7 +40,8 @@ public:
     void
     train(std::vector<std::pair<int, cv::Mat>> trainDataset, float perTreeTrainDatasetSubsetPercentage,
           const cv::Size &winStride, const cv::Size &padding, bool underSampling, bool dataAugmentation,
-          const cv::Size &winSize, bool usePreAugmentedDataset, bool isTask3);
+          const cv::Size &winSize, bool usePreAugmentedDataset, bool isTask3, int maximumDepth,
+          bool saveTreesOneByOne, std::string saveTreeOneByOnePath);
 
     ModelPrediction predictPerImage(cv::Mat &testImage, cv::Size winStride, cv::Size padding, cv::Size winSize);
 

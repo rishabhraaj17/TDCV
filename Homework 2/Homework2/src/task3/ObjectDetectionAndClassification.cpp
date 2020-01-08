@@ -496,6 +496,7 @@ void ObjectDetectionAndClassification::solver(std::vector<std::pair<int, cv::Mat
     auto timeNow = std::chrono::system_clock::now();
     std::time_t time = std::chrono::system_clock::to_time_t(timeNow);
     std::string loadedModelTime = "";
+    std::string oneByOnePath = "../output/models/OneByOne_NMS-treeCount-" + std::to_string(numTrees) + std::to_string(time);
 
     //load model
     if (loadModelFromDisk) {
@@ -504,7 +505,8 @@ void ObjectDetectionAndClassification::solver(std::vector<std::pair<int, cv::Mat
                                         numTrees));
     } else {
         randomForest->train(trainDataset, subsetPercentage, winStride, padding, underSampling, augment,
-                            winSize, true, true);
+                            winSize, true, true, 300, true,
+                            oneByOnePath);
     }
     //save the model for reuse
     if (doSaveModel) {

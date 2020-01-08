@@ -81,7 +81,9 @@ std::vector<cv::Ptr<cv::ml::DTrees> > RandomForest::getTrees() {
 void
 RandomForest::train(std::vector<std::pair<int, cv::Mat>> trainDataset, float perTreeTrainDatasetSubsetPercentage,
                     const cv::Size &winStride, const cv::Size &padding, bool underSampling, bool dataAugmentation,
-                    const cv::Size &winSize = cv::Size(128, 128), bool usePreAugmentedDataset = true, bool isTask3 = true) {
+                    const cv::Size &winSize = cv::Size(128, 128), bool usePreAugmentedDataset = true,
+                    bool isTask3 = true, int maximumDepth = 300, bool saveTreesOneByOne = false,
+                    std::string saveTreeOneByOnePath = "") {
     // Augment the dataset
     int counter = 0;
     std::vector<std::pair<int, cv::Mat>> augmentedTrainDataset;
@@ -112,6 +114,7 @@ RandomForest::train(std::vector<std::pair<int, cv::Mat>> trainDataset, float per
     std::cout << "Train set size after augmentation : " << augmentedTrainDataset.size() << std::endl;
 
     // Train each decision tree
+    int savedTree = 0;
     for (size_t i = 0; i < mTreeCount; i++) {
         std::cout << "Training Decision Tree: " << i << " - Total Trees : " << mTreeCount << "\n";
         std::vector<std::pair<int, cv::Mat>> subsetOfTrainDataset =
@@ -122,8 +125,11 @@ RandomForest::train(std::vector<std::pair<int, cv::Mat>> trainDataset, float per
         cv::Ptr<cv::ml::DTrees> model = trainSingleDecisionTree(subsetOfTrainDataset,
                                                                 winStride,
                                                                 padding,
-                                                                winSize, 100, 6);
+                                                                winSize, maximumDepth, 6);
         mTrees.push_back(model);
+        if (saveTreesOneByOne){
+            mTrees.at(i)->save(saveTreeOneByOnePath + '/' + std::to_string(savedTree++) + ".tree");
+        }
     }
 }
 
