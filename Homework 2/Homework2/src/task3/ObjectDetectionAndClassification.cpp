@@ -174,10 +174,9 @@ ObjectDetectionAndClassification::precisionRecallNMS(const std::string &savePath
     float truePositive = 0, falsePositive = 0, falseNegative = 0;
     for (size_t i = 0; i < testDataset.size(); i++) {
         int currentImage;
-        modelPredictions >> currentImage; // Prediction file format: Starts with File number
+        modelPredictions >> currentImage;
         assert(currentImage == i);
 
-        // Ignore the ground truth data in predictions.txt. we already have it.
         int groundTruthCount, skip;
         modelPredictions >> groundTruthCount; // Ignore - number of ground truth
         std::vector<ModelPrediction> groundTruthPredictions;
@@ -192,15 +191,14 @@ ObjectDetectionAndClassification::precisionRecallNMS(const std::string &savePath
             groundTruthPrediction.boundingBox.width -= groundTruthPrediction.boundingBox.y;
             groundTruthPredictions.push_back(groundTruthPrediction);
 
-            modelPredictions >> skip; // Ignore - label;
+            modelPredictions >> skip;
             for (size_t k = 0; k < 4; k++) {
-                modelPredictions >> skip; // Ignore - rectangle
+                modelPredictions >> skip;
             }
         }
 
-        // Read prediction data
         cv::Mat currentTestImage = testDataset.at(i).second;
-        std::vector<ModelPrediction> predictions; // Output of Hog Detection on ith test image
+        std::vector<ModelPrediction> predictions;
         int totalModelPredictions;
         modelPredictions >> totalModelPredictions;
         predictions.reserve(totalModelPredictions);
@@ -223,13 +221,13 @@ ObjectDetectionAndClassification::precisionRecallNMS(const std::string &savePath
         cv::waitKey(100);
 #endif
 
-        // Apply NonMaximal Suppression
-        cv::Mat clonedFirst = currentTestImage.clone(); // For drawing bbox
-        cv::Mat clonedSecond = currentTestImage.clone();  // For drawing bbox
+        // NMS
+        cv::Mat clonedFirst = currentTestImage.clone();
+        cv::Mat clonedSecond = currentTestImage.clone();
         std::vector<ModelPrediction> NMSPredictions;
         NMSPredictions.reserve(20); // 20 should be enough. //// HyperParam try reducing
 
-        // Ignore boxes with low threshold.
+        // Drop Bounding boxes with low threshold.
         std::vector<ModelPrediction>::iterator iter;
         for (iter = predictions.begin(); iter != predictions.end();) {
             if (iter->confidence < nmsConfidence)

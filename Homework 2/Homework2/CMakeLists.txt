@@ -5,7 +5,6 @@ add_definitions(-DPROJ_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 
 find_package(PkgConfig REQUIRED)
 
-# OpenCV
 set(OpenCV_DIR /usr/local/lib/cmake/opencv4)
 find_package(OpenCV REQUIRED)
 include_directories(${OPENCV_INCLUDE_DIR})
@@ -14,11 +13,6 @@ set(Boost_USE_STATIC_LIBS OFF)
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME OFF)
 find_package(Boost 1.65.1 COMPONENTS filesystem regex)
-#[[if(Boost_FOUND)
-    include_directories(${Boost_INCLUDE_DIRS})
-    add_executable(progname file1.cxx file2.cxx)
-    target_link_libraries(progname ${Boost_LIBRARIES})
-endif()]]
 
 set(CMAKE_CXX_STANDARD 14)
 
@@ -54,10 +48,3 @@ add_executable(ObjectDetection src/task3/task3.cpp ${HEADER_FILES} ${SOURCE_FILE
 target_link_libraries(ObjectDetection ${OpenCV_LIBRARIES})
 target_link_libraries(ObjectDetection ${Boost_LIBRARIES})
 
-# Debug
-#[[
-get_cmake_property(_variableNames VARIABLES)
-list (SORT _variableNames)
-foreach (_variableName ${_variableNames})
-    message(STATUS "${_variableName}=${${_variableName}}")
-endforeach()]]
