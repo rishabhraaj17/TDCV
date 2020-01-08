@@ -18,7 +18,7 @@ int main(){
     int numTrees = 56; // HyperParam
     cv::Size winSize(128, 128);
 
-    float scaleFactor = 1.25f; // HyperParam
+    float scaleFactor = 1.1f; // HyperParam
     int strideX = 6; // HyperParam
     int strideY = 6; // HyperParam
     float NMS_MAX_IOU_THRESHOLD = 0.6f; // If above this threshold, merge the two bounding boxes. // HyperParam
@@ -43,7 +43,7 @@ int main(){
     std::vector<std::pair<int, cv::Mat>> trainDataset = detector.loadTrainDataset();
     std::vector<std::vector<std::vector<int>>> groundTruth = detector.getGroundTruth();
     detector.solver(trainDataset, groundTruth, numTrees, savePath,
-            50.0f, true, true, true, false);
+            50.0f, false, true, true, false);
 
 /*    std::vector<std::pair<int, cv::Mat>> testDataset = detector.loadTestDataset();
     std::string outputDir = "../output/Trees-80_subsetPercent-50-scaleFactor_1.1-undersampling_0-augment_1-strideX_2-strideY_2-NMS_MIN_0.1-NMS_Max_0.5-NMS_CONF_0.6/";

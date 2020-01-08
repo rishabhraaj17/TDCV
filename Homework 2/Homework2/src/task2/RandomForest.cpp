@@ -128,6 +128,9 @@ RandomForest::train(std::vector<std::pair<int, cv::Mat>> trainDataset, float per
                                                                 winSize, maximumDepth, 6);
         mTrees.push_back(model);
         if (saveTreesOneByOne){
+            cv::utils::fs::createDirectories(saveTreeOneByOnePath);
+        }
+        if (saveTreesOneByOne){
             mTrees.at(i)->save(saveTreeOneByOnePath + '/' + std::to_string(savedTree++) + ".tree");
         }
     }
