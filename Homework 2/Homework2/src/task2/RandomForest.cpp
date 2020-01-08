@@ -371,7 +371,6 @@ RandomForest::trainDatasetSubsetSampler(std::vector<std::pair<int, cv::Mat>> &tr
     return trainDatasetSubset;
 }
 
-//Todo
 std::vector<cv::Mat> RandomForest::generateAugmentationsPerImage(cv::Mat &inputImage, int numOfRandomRotations = 4) {
     std::vector<cv::Mat> augmentedImages;
     cv::Mat currentImage = inputImage;
@@ -384,30 +383,20 @@ std::vector<cv::Mat> RandomForest::generateAugmentationsPerImage(cv::Mat &inputI
             cv::rotate(currentImage, rotatedImage, cv::ROTATE_90_CLOCKWISE);
         augmentedVector.push_back(rotatedImage);
 
-        int totalRotations = numOfRandomRotations; //TODO Observe augmentations and parameters
-        for (size_t i = 0; i < totalRotations; i++) { //TODO Remove viz comments before submission
+        int totalRotations = numOfRandomRotations;
+        for (size_t i = 0; i < totalRotations; i++) {
             cv::Mat randomlyRotatedImage(rotatedImage.size(), rotatedImage.type());
             cv::RNG rng(time(0));
             RandomRotateImage(rotatedImage, randomlyRotatedImage, 90, 30, 30, cv::Rect(0, 0, 0, 0), rng);
             augmentedVector.push_back(randomlyRotatedImage);
-            // cv::imshow("input image", rotatedImage);
-            // cv::imshow("RandomRotationImage", randomlyRotatedImage);
-            // cv::waitKey(1000);
         }
 
         int numImagesToFlip = augmentedVector.size();
         for (int i = 0; i < numImagesToFlip; i++) {
             cv::flip(augmentedVector[i], flippedImage, 0);
             augmentedVector.push_back(flippedImage);
-            // cv::Mat dest;
-            // cv::vconcat(augmentedVector[i], flippedImage, dest);
-            // cv::imshow("AugmentedImage", dest);
-            // cv::waitKey(1000);
             cv::flip(augmentedVector[i], flippedImage, 1);
             augmentedVector.push_back(flippedImage);
-            // cv::vconcat(augmentedVector[i], flippedImage, dest);
-            // cv::imshow("AugmentedImage", dest);
-            // cv::waitKey(1000);
         }
 
         augmentedImages.insert(augmentedImages.end(), augmentedVector.begin(), augmentedVector.end());

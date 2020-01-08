@@ -62,8 +62,6 @@ float
 randomForestClassifier(int numberOfClasses = 6, int numberOfDTrees = 70, const cv::Size &winSize = cv::Size(128, 128),
                        float subsetPercentage = 50.0f, bool underSampling = true, bool augment = false,
                        int maximumDepth = 300) {
-    //TODO Experiment with the MaxDepth & TreeCount parameters, to see how it affects the performance
-
     cv::Ptr<RandomForest> randomForest = RandomForest::createRandomForest(numberOfClasses, numberOfDTrees, winSize);
 
     vector<pair<int, cv::Mat>> trainDataset = randomForest->loadTrainDataset();
@@ -107,7 +105,7 @@ int main() {
     cv::Size winSize(128, 128);
     singleDecisionTreeClassifier(numClasses, maxDepth, winSize);
     cout << "\n*********** Random Forest Classification *************************************" << endl;
-    int numberOfDTrees = 256; // TODO: 70 trees gives 90% accuracy
+    int numberOfDTrees = 70;
     float subsetPercentage = 50.0f;
     bool underSampling = true; //under sample the dataset or not (Class Imbalance)
     bool augment = false;
