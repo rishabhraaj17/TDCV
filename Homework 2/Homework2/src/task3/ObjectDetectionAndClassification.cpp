@@ -9,7 +9,7 @@
 #include <chrono>
 #include <ctime>
 
-#define DISPLAY
+//#define DISPLAY
 
 std::vector<std::pair<int, cv::Mat>> ObjectDetectionAndClassification::loadTrainDataset() {
     std::vector<std::pair<int, cv::Mat>> trainDataset;
@@ -254,7 +254,7 @@ ObjectDetectionAndClassification::precisionRecallNMS(const std::string &savePath
                         clusterFound = true;
                         break;
                     }
-/*                    else if (iouScore > NMS_MIN_IOU_THRESHOLD) // ToDo: Improve this.
+                    else if (iouScore > nmsMin)
                     {
                         // Drop the bounding box with lower confidence
                         if (nmsCluster.confidence < prediction.confidence)
@@ -263,7 +263,7 @@ ObjectDetectionAndClassification::precisionRecallNMS(const std::string &savePath
                         }
                         clusterFound = true;
                         break;
-                    }*/
+                    }
                 }
             }
 
@@ -277,7 +277,7 @@ ObjectDetectionAndClassification::precisionRecallNMS(const std::string &savePath
             cv::rectangle(clonedSecond, nmsPrediction.boundingBox, this->bBoxColors[nmsPrediction.label]);
             cv::putText(
                     clonedSecond,
-                    std::to_string(nmsPrediction.confidence),
+                    "Class " + std::to_string(nmsPrediction.label) + ":" + std::to_string(nmsPrediction.confidence),
                     cv::Point(nmsPrediction.boundingBox.x + 5, nmsPrediction.boundingBox.y + 5),
                     fontFace,
                     fontScale,
@@ -292,8 +292,8 @@ ObjectDetectionAndClassification::precisionRecallNMS(const std::string &savePath
         cv::waitKey(0);
 #endif
 
-        std::cout << "Boxes count: " << predictions.size();
-        std::cout << "\nNMS boxes count: " << NMSPredictions.size() << '\n';
+        //std::cout << "Boxes count: " << predictions.size();
+        //std::cout << "\nNMS boxes count: " << NMSPredictions.size() << '\n';
 
 #ifdef DISPLAY
         // Display all ground truth boxes
@@ -357,7 +357,7 @@ void ObjectDetectionAndClassification::evaluate_metrics(std::string savePath,
     std::cout << "\nNMS_CONFIDENCE_THRESHOLD " << "      Precision           "
                                                   "Recall " << std::endl;
     // 60 to 90 is the reasonable range! 55 to 80 is promising// HyperParam
-    for (int confidence = 55; confidence <= 85; confidence += 5) {
+    for (int confidence = 60; confidence <= 84; confidence += 2) {
         this->NMS_CONFIDENCE_THRESHOLD = confidence / 100.0f;
         std::vector<float> precisionRecallValue = precisionRecallNMS(savePath, testDataset,
                                                                      groundTruth,
@@ -456,11 +456,21 @@ void ObjectDetectionAndClassification::computeBoundingBoxAndConfidence(cv::Ptr<R
         for (auto &&prediction : predictions)
             cv::rectangle(predictionImageVis, prediction.boundingBox, gtColors[prediction.label]);
 
+        float fontScale = 0.5;
+        int fontFace = cv::FONT_HERSHEY_PLAIN;
         gt = groundTruth.at(i);
         cv::Mat groundTruthImageVis = currentTestImage.clone();
         for (auto bBox : gt) {
             cv::Rect rect(bBox[1], bBox[2], bBox[3] - bBox[1], bBox[4] - bBox[2]);
             cv::rectangle(groundTruthImageVis, rect, gtColors[bBox[0]]);
+            cv::putText(
+                    groundTruthImageVis,
+                    "Class " + std::to_string(bBox[0]) + ":" + "1",
+                    cv::Point(bBox[1] + 5, bBox[2] + 5),
+                    fontFace,
+                    fontScale,
+                    this->bBoxColors[bBox[0]]
+            );
         }
 
         std::stringstream predictionPath;
@@ -501,16 +511,16 @@ void ObjectDetectionAndClassification::solver(std::vector<std::pair<int, cv::Mat
     //load model
     if (loadModelFromDisk) {
         randomForest->setTrees(
-                RandomForest::loadModel("../output/models/NMS-treeCount-" + std::to_string(numTrees) + loadedModelTime,
-                                        numTrees));
+                RandomForest::loadModel(pathToLoadModel, numTrees));
     } else {
         randomForest->train(trainDataset, subsetPercentage, winStride, padding, underSampling, augment,
                             winSize, true, true, 300, true,
                             oneByOnePath);
     }
     //save the model for reuse
-    if (doSaveModel) {
+    if (doSaveModel and not loadModelFromDisk) {
         randomForest->saveModel("../output/models/NMS-treeCount-" + std::to_string(numTrees) + std::to_string(time));
+        std::cout<< "Model Saved!"<< std::endl;
     }
 
     //todo replace real test data later
