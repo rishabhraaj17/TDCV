@@ -15,7 +15,7 @@ int main(){
     cout << "Object Detection" << endl;
 
     int numClasses = 4;
-    int numTrees = 10; // HyperParam
+    int numTrees = 61; // HyperParam
     cv::Size winSize(128, 128);
 
     float scaleFactor = 1.10f; // HyperParam
@@ -25,6 +25,7 @@ int main(){
     float NMS_MIN_IOU_THRESHOLD = 0.1f; // If above this threshold, drop the bounding boxes with lower confidence. // HyperParam
     float NMS_CONFIDENCE_THRESHOLD = 0.6f; // HyperParam
 
+    cout << "Training Trees : " << std::to_string(numTrees) << endl;
     ObjectDetectionAndClassification detector(NMS_MAX_IOU_THRESHOLD, NMS_MIN_IOU_THRESHOLD,
             NMS_CONFIDENCE_THRESHOLD, winSize, numClasses, scaleFactor, strideX, strideY);
 
@@ -41,8 +42,13 @@ int main(){
 
     std::vector<std::pair<int, cv::Mat>> trainDataset = detector.loadTrainDataset();
     std::vector<std::vector<std::vector<int>>> groundTruth = detector.getGroundTruth();
-    detector.solver(trainDataset, groundTruth, numTrees, savePath,
-            50.0f, false, true, true, false);
+    //detector.solver(trainDataset, groundTruth, numTrees, savePath,
+    //        50.0f, false, true, true, false);
+
+    std::vector<std::pair<int, cv::Mat>> testDataset = detector.loadTestDataset();
+    std::string outputDir = "../output/Trees-80_subsetPercent-50-scaleFactor_1.1-undersampling_0-augment_1-strideX_2-strideY_2-NMS_MIN_0.1-NMS_Max_0.5-NMS_CONF_0.6/";
+    detector.evaluate_metrics(outputDir, testDataset, groundTruth);
+
 
     cout << "\n******************* Task 3 Finished! *************************************" << endl;
 }

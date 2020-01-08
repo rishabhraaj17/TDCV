@@ -9,7 +9,7 @@
 #include <chrono>
 #include <ctime>
 
-//#define DISPLAY
+#define DISPLAY
 
 std::vector<std::pair<int, cv::Mat>> ObjectDetectionAndClassification::loadTrainDataset() {
     std::vector<std::pair<int, cv::Mat>> trainDataset;
@@ -165,6 +165,8 @@ ObjectDetectionAndClassification::precisionRecallNMS(const std::string &savePath
                                                      std::vector<std::vector<std::vector<int>>> &groundTruth,
                                                      float nmsMin, float nmsMax,
                                                      float nmsConfidence) {
+    float fontScale = 0.5;
+    int fontFace = cv::FONT_HERSHEY_PLAIN;
     std::ifstream modelPredictions(savePath + "predictions.txt");
     if (!modelPredictions.is_open()) {
         std::cout << "Failed to open" << savePath + "predictions.txt" << std::endl;
@@ -213,12 +215,12 @@ ObjectDetectionAndClassification::precisionRecallNMS(const std::string &savePath
 
         // Display all the bounding boxes before NonMaximal Suppression
 #ifdef DISPLAY
-        cv::Mat testImageClone = testImage.clone(); // For drawing bbox
-        for (auto &&prediction : predictionsVector) {
-            cv::rectangle(testImageClone, prediction.boundingBox, gtColors[prediction.label]);
+        cv::Mat testImageClone = currentTestImage.clone(); // For drawing bbox
+        for (auto &&prediction : predictions) {
+            cv::rectangle(testImageClone, prediction.boundingBox, this->bBoxColors[prediction.label]);
         }
         cv::imshow("TestImageOutput", testImageClone);
-        cv::waitKey(100);
+        cv::waitKey(0);
 #endif
 
         // NMS
@@ -252,46 +254,55 @@ ObjectDetectionAndClassification::precisionRecallNMS(const std::string &savePath
                         clusterFound = true;
                         break;
                     }
-                    // else if (iouScore > NMS_MIN_IOU_THRESHOLD) // ToDo: Improve this.
-                    // {
-                    //     // Drop the bounding box with lower confidence
-                    //     if (nmsCluster.confidence < prediction.confidence)
-                    //     {
-                    //         nmsCluster = prediction;
-                    //     }
-                    //     clusterFound = true;
-                    //     break;
-                    // }
+/*                    else if (iouScore > NMS_MIN_IOU_THRESHOLD) // ToDo: Improve this.
+                    {
+                        // Drop the bounding box with lower confidence
+                        if (nmsCluster.confidence < prediction.confidence)
+                        {
+                            nmsCluster = prediction;
+                        }
+                        clusterFound = true;
+                        break;
+                    }*/
                 }
             }
 
             // If no NMS cluster found, add the prediction as a new cluster
-            if (!clusterFound)
+            if (!clusterFound) {
                 NMSPredictions.push_back(prediction);
+            }
         }
 
-        // Prediction file format: Next is N Lines of Labels and cv::Rect
-        for (auto &&prediction : NMSPredictions)
-            cv::rectangle(clonedSecond, prediction.boundingBox, this->bBoxColors[prediction.label]);
+        for (auto &&nmsPrediction : NMSPredictions) {
+            cv::rectangle(clonedSecond, nmsPrediction.boundingBox, this->bBoxColors[nmsPrediction.label]);
+            cv::putText(
+                    clonedSecond,
+                    std::to_string(nmsPrediction.confidence),
+                    cv::Point(nmsPrediction.boundingBox.x + 5, nmsPrediction.boundingBox.y + 5),
+                    fontFace,
+                    fontScale,
+                    this->bBoxColors[nmsPrediction.label]
+            );
+        }
 
 #ifdef DISPLAY
         // Display all the bounding boxes before NonMaximal Suppression
-        cv::imshow("TestImage NMS BBox Filter", testImageNms1Clone);
-        cv::imshow("TestImage NMS Output", testImageNmsClone);
-        cv::waitKey(500);
+        cv::imshow("TestImage NMS BBox Filter", clonedFirst);
+        cv::imshow("TestImage NMS Output", clonedSecond);
+        cv::waitKey(0);
 #endif
 
-        // cout << "Boxes count: " << predictionsVector.size();
-        // cout << "\nNMS boxes count: " << predictionsNMSVector.size() << '\n';
+        std::cout << "Boxes count: " << predictions.size();
+        std::cout << "\nNMS boxes count: " << NMSPredictions.size() << '\n';
 
 #ifdef DISPLAY
         // Display all ground truth boxes
-        cv::Mat testImageGtClone = testImage.clone(); // For drawing bbox
+        cv::Mat testImageGtClone = currentTestImage.clone(); // For drawing bbox
         for (size_t j = 0; j < groundTruthPredictions.size(); j++)
             cv::rectangle(testImageGtClone, groundTruthPredictions.at(j).boundingBox,
-                          gtColors[groundTruthPredictions.at(j).label]);
+                          this->bBoxColors[groundTruthPredictions.at(j).label]);
         cv::imshow("Ground Truth", testImageGtClone);
-        cv::waitKey(500);
+        cv::waitKey(0);
 #endif
 
         // Write NMS output image
@@ -346,7 +357,7 @@ void ObjectDetectionAndClassification::evaluate_metrics(std::string savePath,
     std::cout << "\nNMS_CONFIDENCE_THRESHOLD " << "      Precision           "
                                                   "Recall " << std::endl;
     // 60 to 90 is the reasonable range! 55 to 80 is promising// HyperParam
-    for (int confidence = 60; confidence <= 90; confidence += 5) {
+    for (int confidence = 55; confidence <= 85; confidence += 5) {
         this->NMS_CONFIDENCE_THRESHOLD = confidence / 100.0f;
         std::vector<float> precisionRecallValue = precisionRecallNMS(savePath, testDataset,
                                                                      groundTruth,

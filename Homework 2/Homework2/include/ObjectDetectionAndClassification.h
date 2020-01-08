@@ -68,7 +68,7 @@ public:
 
     ~ObjectDetectionAndClassification();
 
-    float NMS_MIN_IOU_THRESHOLD = 0.1f;
+    float NMS_MIN_IOU_THRESHOLD = 0.3f;
     float NMS_MAX_IOU_THRESHOLD = 0.6f;
     float NMS_CONFIDENCE_THRESHOLD = 100.0f;
 
