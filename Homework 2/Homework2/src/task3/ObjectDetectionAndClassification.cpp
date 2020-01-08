@@ -9,7 +9,6 @@
 #include <chrono>
 #include <ctime>
 
-//#define DISPLAY
 
 std::vector<std::pair<int, cv::Mat>> ObjectDetectionAndClassification::loadTrainDataset() {
     std::vector<std::pair<int, cv::Mat>> trainDataset;
@@ -158,7 +157,7 @@ std::vector<float> ObjectDetectionAndClassification::computeTrueNegativeFalseNeg
     return falseNegativeTrueNegative;
 }
 
-//todo
+
 std::vector<float>
 ObjectDetectionAndClassification::precisionRecallNMS(const std::string &savePath,
                                                      std::vector<std::pair<int, cv::Mat>> &testDataset,
@@ -180,7 +179,7 @@ ObjectDetectionAndClassification::precisionRecallNMS(const std::string &savePath
         assert(currentImage == i);
 
         int groundTruthCount, skip;
-        modelPredictions >> groundTruthCount; // Ignore - number of ground truth
+        modelPredictions >> groundTruthCount;
         std::vector<ModelPrediction> groundTruthPredictions;
         for (size_t g = 0; g < groundTruthCount; g++) {
             ModelPrediction groundTruthPrediction;
@@ -213,21 +212,11 @@ ObjectDetectionAndClassification::precisionRecallNMS(const std::string &savePath
             predictions.push_back(prediction);
         }
 
-        // Display all the bounding boxes before NonMaximal Suppression
-#ifdef DISPLAY
-        cv::Mat testImageClone = currentTestImage.clone(); // For drawing bbox
-        for (auto &&prediction : predictions) {
-            cv::rectangle(testImageClone, prediction.boundingBox, this->bBoxColors[prediction.label]);
-        }
-        cv::imshow("TestImageOutput", testImageClone);
-        cv::waitKey(0);
-#endif
-
         // NMS
         cv::Mat clonedFirst = currentTestImage.clone();
         cv::Mat clonedSecond = currentTestImage.clone();
         std::vector<ModelPrediction> NMSPredictions;
-        NMSPredictions.reserve(20); // 20 should be enough. //// HyperParam try reducing
+        NMSPredictions.reserve(32);
 
         // Drop Bounding boxes with low threshold.
         std::vector<ModelPrediction>::iterator iter;
@@ -240,35 +229,33 @@ ObjectDetectionAndClassification::precisionRecallNMS(const std::string &savePath
 
         for (auto &&prediction : predictions) {
             cv::rectangle(clonedFirst, prediction.boundingBox, this->bBoxColors[prediction.label]);
-            // Check if NMS already has a cluster which shares NMS_IOU_THRESHOLD area with current prediction.bbox and both have same label.
-            bool clusterFound = false;
+            bool bBoxClusterPresent = false;
             for (auto &&nmsCluster : NMSPredictions) {
-                if (nmsCluster.label == prediction.label) { // Only if same label
+                if (nmsCluster.label == prediction.label) {
                     cv::Rect &rect1 = prediction.boundingBox;
                     cv::Rect &rect2 = nmsCluster.boundingBox;
                     float iouScore = ((rect1 & rect2).area() * 1.0f) / ((rect1 | rect2).area());
-                    if (iouScore > nmsMax) // Merge the two bounding boxes
+                    if (iouScore > nmsMax)
                     {
                         nmsCluster.boundingBox = rect1 | rect2;
                         nmsCluster.confidence = std::max(prediction.confidence, nmsCluster.confidence);
-                        clusterFound = true;
+                        bBoxClusterPresent = true;
                         break;
                     }
                     else if (iouScore > nmsMin)
                     {
-                        // Drop the bounding box with lower confidence
                         if (nmsCluster.confidence < prediction.confidence)
                         {
                             nmsCluster = prediction;
                         }
-                        clusterFound = true;
+                        bBoxClusterPresent = true;
                         break;
                     }
                 }
             }
 
-            // If no NMS cluster found, add the prediction as a new cluster
-            if (!clusterFound) {
+            // Adding isolated boxes -- rethink
+            if (!bBoxClusterPresent) {
                 NMSPredictions.push_back(prediction);
             }
         }
@@ -285,44 +272,18 @@ ObjectDetectionAndClassification::precisionRecallNMS(const std::string &savePath
             );
         }
 
-#ifdef DISPLAY
-        // Display all the bounding boxes before NonMaximal Suppression
-        cv::imshow("TestImage NMS BBox Filter", clonedFirst);
-        cv::imshow("TestImage NMS Output", clonedSecond);
-        cv::waitKey(0);
-#endif
-
-        //std::cout << "Boxes count: " << predictions.size();
-        //std::cout << "\nNMS boxes count: " << NMSPredictions.size() << '\n';
-
-#ifdef DISPLAY
-        // Display all ground truth boxes
-        cv::Mat testImageGtClone = currentTestImage.clone(); // For drawing bbox
-        for (size_t j = 0; j < groundTruthPredictions.size(); j++)
-            cv::rectangle(testImageGtClone, groundTruthPredictions.at(j).boundingBox,
-                          this->bBoxColors[groundTruthPredictions.at(j).label]);
-        cv::imshow("Ground Truth", testImageGtClone);
-        cv::waitKey(0);
-#endif
-
-        // Write NMS output image
+        // Save Vis
         std::stringstream NMSSavePath;
         NMSSavePath << savePath << std::setfill('0') << std::setw(4) << i << "_NMSOutputWith_" << "Confidence_"
                           << nmsConfidence * 100.0f << "%.png";
         std::string nmsOutputFilePathStr = NMSSavePath.str();
         cv::imwrite(nmsOutputFilePathStr, clonedSecond);
 
-        // Compute precision and recall using groundTruthPredictions and predictionsNMSVector
-#ifdef DISPLAY
-        cv::waitKey(0);
-#endif
+        // Metrics
         std::vector<float> truePositiveFalsePositive = computeTruePositiveFalsePositive(NMSPredictions,
                                                                                         groundTruthPredictions, 0.5f);
         std::vector<float> falseNegativeTrueNegative = computeTrueNegativeFalseNegative(NMSPredictions,
                                                                                         groundTruthPredictions, 0.5f);
-#ifdef DISPLAY
-        cv::waitKey(0);
-#endif
         truePositive += truePositiveFalsePositive[0];
         falsePositive += truePositiveFalsePositive[1];
         falseNegative += falseNegativeTrueNegative[0];
@@ -340,13 +301,6 @@ ObjectDetectionAndClassification::precisionRecallNMS(const std::string &savePath
 void ObjectDetectionAndClassification::evaluate_metrics(std::string savePath,
                                                         std::vector<std::pair<int, cv::Mat>> &testDataset,
                                                         std::vector<std::vector<std::vector<int>>> &groundTruth) {
-#ifdef DISPLAY
-    cv::namedWindow("TestImageOutput");
-    cv::namedWindow("TestImage NMS Output");
-    cv::namedWindow("Ground Truth");
-    cv::namedWindow("TestImage NMS BBox Filter");
-    cv::waitKey(0);
-#endif
     std::ofstream metricLogCSV;
     metricLogCSV.open(savePath + "metrics.csv");
     if (!metricLogCSV.is_open()) {
@@ -523,9 +477,7 @@ void ObjectDetectionAndClassification::solver(std::vector<std::pair<int, cv::Mat
         std::cout<< "Model Saved!"<< std::endl;
     }
 
-    //todo replace real test data later
     std::vector<std::pair<int, cv::Mat>> testDataset = loadTestDataset();
-    //std::vector<std::pair<int, cv::Mat>> testDataset = debugTestDataset();
 
     cv::utils::fs::createDirectories(savePath);
     computeBoundingBoxAndConfidence(randomForest, testDataset, groundTruth,
