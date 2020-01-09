@@ -311,7 +311,7 @@ void ObjectDetectionAndClassification::evaluate_metrics(std::string savePath,
     std::cout << "\nNMS_CONFIDENCE_THRESHOLD " << "      Precision           "
                                                   "Recall " << std::endl;
     // 60 to 90 is the reasonable range! 55 to 80 is promising// HyperParam
-    for (int confidence = 60; confidence <= 84; confidence += 2) {
+    for (int confidence = 0; confidence <= 100; confidence += 2) {
         this->NMS_CONFIDENCE_THRESHOLD = confidence / 100.0f;
         std::vector<float> precisionRecallValue = precisionRecallNMS(savePath, testDataset,
                                                                      groundTruth,
