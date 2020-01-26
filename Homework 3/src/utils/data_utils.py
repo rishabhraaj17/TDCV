@@ -2,7 +2,8 @@ import cv2 as cv2
 from PIL import Image
 import numpy as np
 from albumentations import (HueSaturationValue, RGBShift, RandomBrightnessContrast, Blur, MedianBlur)
-import torchvision.transforms as transforms
+import itertools
+import torch
 
 from utils.vis_utils import show_image
 
@@ -113,8 +114,17 @@ def get_overall_train_std(images: list, mean: np.ndarray = None):
 
 
 def get_train_mean_and_std(data_dir: str, classes: tuple):
-    db, train, test = get_datasets(data_dir, classes)
-    images = [i[0] for i in train]
+    db, train, _ = get_datasets(data_dir, classes)
+    # images = [i[0] for i in train]
+    images = [i[0] for i in itertools.chain(db, train)]
+    mean = get_overall_train_mean(images)
+    dev = get_overall_train_std(images, mean)
+    return mean, dev
+
+
+def get_test_mean_and_std(data_dir: str, classes: tuple):
+    _, _, test = get_datasets(data_dir, classes)
+    images = [i[0] for i in test]
     mean = get_overall_train_mean(images)
     dev = get_overall_train_std(images, mean)
     return mean, dev
@@ -188,19 +198,44 @@ def get_augmented_dataset(data_dir: str, classes: tuple, num_samples_augment=2):
     return db, train, test
 
 
+def save(dataset: list, save_path: str, data_set_type: str):
+    torch.save(dataset, f'{save_path}/{data_set_type}.pt')
+
+
+def normalize(dataset: list, mean: np.ndarray, std: list):
+    for sample in dataset:
+        sample[0] = (sample[0] - mean) / std
+    return dataset
+
+
+def get_normalized_datasets(data_dir: str, classes: tuple, mean: np.ndarray, std: list):
+    coarse_data = get_coarse_data(data_dir, classes)
+    fine_data = get_fine_data(data_dir, classes)
+    real_train_data, real_test_data = get_real_data(data_dir, classes)
+    train_db = fine_data
+    train_db.extend(real_train_data)
+    coarse_data = normalize(coarse_data, mean, std)
+    train_db = normalize(train_db, mean, std)
+    real_test_data = normalize(real_test_data, mean, std)  # using train mean and std for test too. fixme if performance issues aries
+    return coarse_data, train_db, real_test_data
+
+
 if __name__ == '__main__':
     data_dir = "../../dataset/"
     classes = ("ape", "benchvise", "cam", "cat", "duck")
     m, std = get_train_mean_and_std(data_dir, classes)
-
-    normalize = transforms.Normalize(mean=m, std=std)  # MNIST
-
-    # define transforms
-    transform = transforms.Compose([
-        transforms.ToTensor(),
-        normalize
-    ])
-    db, train, test = get_datasets(data_dir, classes)
+    print(m, std)
+    # db, train, test = get_datasets(data_dir, classes)
     # db, train, test = get_augmented_dataset(data_dir, classes)
-    print(len(db), len(train), len(test))
-    print('Loaded!')
+    # print(len(db), len(train), len(test))
+    # print(np.max(db[0][0]))
+
+    db, train, test = get_normalized_datasets(data_dir, classes, m, std)
+    print(np.max(db[0][0]))
+    print(np.max(train[0][0]))
+    print(np.max(test[0][0]))
+    # print(len(db), len(train), len(test))
+    # save(db, data_dir, 'S_db')
+    # save(train, data_dir, 'S_train')
+    # save(test, data_dir, 'S_test')
+    print('Done!')
