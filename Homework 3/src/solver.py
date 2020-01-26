@@ -19,25 +19,27 @@ class Solver(object):
         train_accuracy = 0
 
         for batch, data in enumerate(train_loader):
-            X, y, rect = data
-            X, y, rect = X.to(device), y.to(device), rect.to(device)
+            anchor, puller, pusher = data
+            anchor, puller, pusher = anchor.float().to(device), puller.float().to(device), pusher.float().to(device)
+
+            X = torch.cat([anchor[0], puller[0], pusher[0]]).permute(dims=[0, 3, 1, 2])
 
             optimizer.zero_grad()
             y_pred = model(X)
-            loss = self.loss_function(y_pred, rect)  # Check if we need to swap it
+            loss = self.loss_function(y_pred)
             train_loss += loss.item()
 
             loss.backward()
             optimizer.step()
 
         train_loss /= len(train_loader)
-        train_accuracy /= len(train_loader)
+        # train_accuracy /= len(train_loader)
 
         if self.writer_train is not None:
             self.writer_train.add_scalar('Training Loss', train_loss, current_epoch)
             self.writer_train.add_scalar('Training Accuracy', train_accuracy, current_epoch)
 
-        print(f'Epoch: {current_epoch}, Training Loss: {train_loss}, Training Accuracy: {train_accuracy * 100}%')
+        print(f'Epoch: {current_epoch}, Training Loss: {train_loss}')
 
     def validation_step(self, model, val_loader, current_epoch, device):
         model.eval()
@@ -47,21 +49,23 @@ class Solver(object):
 
         with torch.no_grad():
             for batch, data in enumerate(val_loader):
-                X, y, rect = data
-                X, y, rect = X.to(device), y.to(device), rect.to(device)
+                anchor, puller, pusher = data
+                anchor, puller, pusher = anchor.float().to(device), puller.float().to(device), pusher.float().to(device)
+
+                X = torch.cat([anchor[0], puller[0], pusher[0]]).permute(dims=[0, 3, 1, 2])
 
                 y_pred = model(X)
-                loss = self.loss_function(y_pred, rect)
+                loss = self.loss_function(y_pred)
                 val_loss += loss.item()
 
         val_loss /= len(val_loader)
-        val_accuracy /= len(val_loader)
+        # val_accuracy /= len(val_loader)
 
         if self.writer_val is not None:
             self.writer_val.add_scalar('Validation Loss', val_loss, current_epoch)
             self.writer_val.add_scalar('Validation Accuracy', val_accuracy, current_epoch)
 
-        print(f'Epoch : {current_epoch}, Validation Loss: {val_loss}, Validation Accuracy: {val_accuracy * 100}%')
+        print(f'Epoch : {current_epoch}, Validation Loss: {val_loss}')
         return val_loss
 
     def train(self, model, train_loader, val_loader, num_epochs, save_path, save_model=False, save_state_dict=True,
