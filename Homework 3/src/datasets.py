@@ -62,11 +62,11 @@ class TripletDataset(Dataset):
         puller = self.get_puller(anchor)
         pusher_idx = torch.randint(len(self.db), (1,)).item()
         pusher = self.db[pusher_idx]
-        anchor = DataSample(image=torch.from_numpy(anchor[0]), label=anchor[1], pose=torch.tensor(anchor[2:]))
-        puller = DataSample(image=torch.from_numpy(puller[0]), label=puller[1], pose=torch.tensor(puller[2:]))
-        pusher = DataSample(image=torch.from_numpy(pusher[0]), label=pusher[1], pose=torch.tensor(pusher[2:]))
-        return Triplet(anchor, puller, pusher)
-        # return anchor, puller, pusher
+        # anchor = DataSample(image=torch.from_numpy(anchor[0]), label=anchor[1], pose=torch.tensor(anchor[2:]))
+        # puller = DataSample(image=torch.from_numpy(puller[0]), label=puller[1], pose=torch.tensor(puller[2:]))
+        # pusher = DataSample(image=torch.from_numpy(pusher[0]), label=pusher[1], pose=torch.tensor(pusher[2:]))
+        # return Triplet(anchor, puller, pusher)
+        return anchor, puller, pusher
 
 
 class DummyDataset(VisionDataset):
