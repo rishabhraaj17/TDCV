@@ -9,6 +9,8 @@ import matplotlib.pyplot as plt
 from datasets import TripletDataset
 import numpy as np
 
+# TODO: try LR schedulers
+
 data = TripletDataset(data_dir='../dataset/', train=True, online=False)
 data_loader = DataLoader(dataset=data, batch_size=8, shuffle=True, num_workers=0)
 m = DescriptorNetwork()

@@ -26,18 +26,22 @@ class Solver(object):
 
             optimizer.zero_grad()
             y_pred = model(X)
-            loss = self.loss_function(y_pred)
+            triplet_loss, pair_loss = self.loss_function(y_pred)
+            loss = triplet_loss + pair_loss
             train_loss += loss.item()
 
             loss.backward()
             optimizer.step()
 
-        train_loss /= len(train_loader)
-        # train_accuracy /= len(train_loader)
+            if batch % 10 == 0 and self.writer_train is not None:
+                self.writer_train.add_scalar('Train/Triplet_Loss', triplet_loss.item(), batch)
+                self.writer_train.add_scalar('Train/Pair_Loss', pair_loss.item(), batch)
+
+        train_loss /= len(train_loader.dataset)
+        # train_accuracy /= len(train_loader.dataset)
 
         if self.writer_train is not None:
             self.writer_train.add_scalar('Training Loss', train_loss, current_epoch)
-            self.writer_train.add_scalar('Training Accuracy', train_accuracy, current_epoch)
 
         print(f'Epoch: {current_epoch}, Training Loss: {train_loss}')
 
@@ -55,15 +59,19 @@ class Solver(object):
                 X = torch.cat([anchor[0], puller[0], pusher[0]]).permute(dims=[0, 3, 1, 2])
 
                 y_pred = model(X)
-                loss = self.loss_function(y_pred)
+                triplet_loss, pair_loss = self.loss_function(y_pred)
+                loss = triplet_loss + pair_loss
                 val_loss += loss.item()
 
-        val_loss /= len(val_loader)
-        # val_accuracy /= len(val_loader)
+                if batch % 10 == 0 and self.writer_val is not None:
+                    self.writer_val.add_scalar('Validation/Triplet_Loss', triplet_loss.item(), batch)
+                    self.writer_val.add_scalar('Validation/Pair_Loss', pair_loss.item(), batch)
+
+        val_loss /= len(val_loader.dataset)
+        # val_accuracy /= len(val_loader.dataset)
 
         if self.writer_val is not None:
             self.writer_val.add_scalar('Validation Loss', val_loss, current_epoch)
-            self.writer_val.add_scalar('Validation Accuracy', val_accuracy, current_epoch)
 
         print(f'Epoch : {current_epoch}, Validation Loss: {val_loss}')
         return val_loss
