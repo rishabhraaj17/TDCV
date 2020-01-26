@@ -1,3 +1,4 @@
+import torch
 import torch.nn as nn
 
 
@@ -26,3 +27,9 @@ class DescriptorNetwork(nn.Module):
 
     def forward(self, x):
         return self.network(x)
+
+    def save(self, path, save_state_dict=True):
+        if save_state_dict:
+            torch.save(self.state_dict(), path + '_state_dict.pt')
+        else:
+            torch.save(self, path + '.pt')

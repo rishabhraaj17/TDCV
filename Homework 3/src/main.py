@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 
-from models import DescriptorNetwork
+from model import DescriptorNetwork
 from loss import TripletAndPairLoss
 
 import matplotlib.pyplot as plt
@@ -16,9 +16,9 @@ import numpy as np
 # # plt.imshow(data[5000][0])
 # # plt.show()
 # print('done')
-x = torch.randn(size=(9, 3, 64, 64))
+x = torch.randn(size=(96, 3, 64, 64))
 m = DescriptorNetwork()
-l = TripletAndPairLoss(batch_size=9)
+l = TripletAndPairLoss(batch_size=96)
 out = m(x)
 loss = l(out)
 print(out.size())
