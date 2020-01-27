@@ -3,6 +3,8 @@ import torch.optim as optim
 
 from utils.train_utils import save_checkpoint, load_checkpoint
 
+# TODO: Remove it after train and evaluation is done
+
 
 class Solver(object):
     def __init__(self, loss_function, optim_args, optimizer=optim.Adam, writer_train=None, writer_val=None):

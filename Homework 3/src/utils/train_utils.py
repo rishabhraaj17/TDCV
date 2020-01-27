@@ -31,7 +31,7 @@ def get_train_valid_loader(batch_size,
     if 0 <= valid_size <= 1:
         assert valid_size, "dataset split is incorrect"
 
-    dataset = TripletDataset(data_dir='../../dataset/', train=False, online=False)
+    dataset = TripletDataset(data_dir='../dataset/', train=False, online=False)
 
     # Validation and Train Split
     num_samples = len(dataset)
@@ -58,7 +58,7 @@ def get_test_loader(batch_size=1,
                     shuffle=True,
                     num_workers=0,
                     pin_memory=True):
-    dataset = TestDataset(data_dir='../../dataset/')
+    dataset = TestDataset(data_dir='../dataset/')
     data_loader = torch.utils.data.DataLoader(dataset=dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers, pin_memory=pin_memory)
     return data_loader
 
@@ -67,7 +67,7 @@ def get_template_loader(batch_size=1,
                         shuffle=True,
                         num_workers=0,
                         pin_memory=True):
-    dataset = TemplateDataset(data_dir='../../dataset/')
+    dataset = TemplateDataset(data_dir='../dataset/')
     data_loader = torch.utils.data.DataLoader(dataset=dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers, pin_memory=pin_memory)
     return data_loader
 
@@ -76,6 +76,6 @@ def get_train_loader(batch_size,
                      shuffle=True,
                      num_workers=0,
                      pin_memory=True):
-    dataset = TripletDataset(data_dir='../../dataset/', train=True, online=False)
+    dataset = TripletDataset(data_dir='../dataset/', train=True, online=False)
     data_loader = torch.utils.data.DataLoader(dataset=dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers, pin_memory=pin_memory)
     return data_loader
