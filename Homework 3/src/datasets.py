@@ -106,3 +106,16 @@ class TestDataset(Dataset):
 
     def __getitem__(self, item):
         return self.dataset[item]
+
+
+class TrainDataset(Dataset):
+    def __init__(self, data_dir: str):
+        super(TrainDataset, self).__init__()
+        self.data_dir = data_dir
+        self.dataset = torch.load(data_dir + 'S_train.pt')
+
+    def __len__(self):
+        return len(self.dataset)
+
+    def __getitem__(self, item):
+        return self.dataset[item]

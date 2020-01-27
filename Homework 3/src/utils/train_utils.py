@@ -4,7 +4,7 @@ import shutil
 
 from torch.utils.data import SubsetRandomSampler
 
-from datasets import TripletDataset, TestDataset, TemplateDataset
+from datasets import TripletDataset, TestDataset, TemplateDataset, TrainDataset
 
 
 def save_checkpoint(state, is_best=False, checkpoint_dir=None, best_model_dir=None):
@@ -31,7 +31,8 @@ def get_train_valid_loader(batch_size,
     if 0 <= valid_size <= 1:
         assert valid_size, "dataset split is incorrect"
 
-    dataset = TripletDataset(data_dir='../dataset/', train=False, online=False)
+    # dataset = TripletDataset(data_dir='../dataset/', train=False, online=False)
+    dataset = TrainDataset(data_dir='../dataset/')
 
     # Validation and Train Split
     num_samples = len(dataset)
