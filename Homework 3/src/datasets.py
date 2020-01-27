@@ -80,3 +80,29 @@ class DummyDataset(VisionDataset):
 
     def __getitem__(self, item):
         return self.dataset[item]
+
+
+class TemplateDataset(Dataset):
+    def __init__(self, data_dir: str):
+        super(TemplateDataset, self).__init__()
+        self.data_dir = data_dir
+        self.dataset = torch.load(data_dir + 'S_db.pt')
+
+    def __len__(self):
+        return len(self.dataset)
+
+    def __getitem__(self, item):
+        return self.dataset[item]
+
+
+class TestDataset(Dataset):
+    def __init__(self, data_dir: str):
+        super(TestDataset, self).__init__()
+        self.data_dir = data_dir
+        self.dataset = torch.load(data_dir + 'S_test.pt')
+
+    def __len__(self):
+        return len(self.dataset)
+
+    def __getitem__(self, item):
+        return self.dataset[item]

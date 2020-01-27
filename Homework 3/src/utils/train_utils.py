@@ -4,7 +4,7 @@ import shutil
 
 from torch.utils.data import SubsetRandomSampler
 
-from datasets import TripletDataset
+from datasets import TripletDataset, TestDataset, TemplateDataset
 
 
 def save_checkpoint(state, is_best=False, checkpoint_dir=None, best_model_dir=None):
@@ -54,11 +54,20 @@ def get_train_valid_loader(batch_size,
     return train_loader, valid_loader
 
 
-def get_test_loader(batch_size,
+def get_test_loader(batch_size=1,
                     shuffle=True,
                     num_workers=0,
                     pin_memory=True):
-    dataset = TripletDataset(data_dir='../../dataset/', train=False, online=False)
+    dataset = TestDataset(data_dir='../../dataset/')
+    data_loader = torch.utils.data.DataLoader(dataset=dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers, pin_memory=pin_memory)
+    return data_loader
+
+
+def get_template_loader(batch_size=1,
+                        shuffle=True,
+                        num_workers=0,
+                        pin_memory=True):
+    dataset = TemplateDataset(data_dir='../../dataset/')
     data_loader = torch.utils.data.DataLoader(dataset=dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers, pin_memory=pin_memory)
     return data_loader
 
