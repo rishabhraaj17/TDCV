@@ -68,7 +68,7 @@ class Solver(object):
                 image, label, pose = image.to(device), label.to(device), pose.to(device)
                 val_descriptor = model(image)
 
-                prediction_distance, prediction_idx = nearest_neighbours.kneighbors(val_descriptor.numpy())
+                prediction_distance, prediction_idx = nearest_neighbours.kneighbors(val_descriptor.numpy(), 5)
                 prediction_label = int(np.round(knn_dataset_label[prediction_idx[0][0]]))
                 y_pred.append(prediction_label)
                 y_true.append(label.item())
@@ -136,7 +136,7 @@ class Solver(object):
         # Set the xticklabels to a string that tells us what the bin edges were
         ax.set_xticklabels(['{} - {}'.format(bins[i], bins[i + 1]) for i, j in enumerate(hist)])
         if save_path is not None:
-            plt.savefig(f'{save_path}/{datetime.now().strftime("%m-%d-%Y")}/Test_Histogram_Plot_epoch_{current_epoch}_{datetime.now().strftime("%H-%S")}.png')
+            plt.savefig(f'{save_path}/{datetime.now().strftime("%m-%d-%Y")}/Validation_Histogram_Plot_epoch_{current_epoch}_{datetime.now().strftime("%H-%S")}.png')
         plt.show()
 
     def solve(self, model, train_loader, val_loader, template_loader, num_epochs, save_path, save_model=False, save_state_dict=True,
