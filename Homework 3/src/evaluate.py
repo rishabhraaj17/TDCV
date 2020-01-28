@@ -14,7 +14,8 @@ from utils.vis_utils import plot_confusion_matrix
 
 
 class Evaluator(object):
-    def __init__(self, dataset_mean, dataset_dev, writer_test=None, writer_descriptor=None):
+    def __init__(self, dataset_mean, dataset_dev, writer_test=None, writer_descriptor=None, k_neighbour_count=5):
+        self.k_neighbour_count = k_neighbour_count
         self.dataset_dev = dataset_dev
         self.dataset_mean = dataset_mean
         self.writer_test = writer_test
@@ -34,7 +35,7 @@ class Evaluator(object):
                 image, label, pose = image.to(device), label.to(device), pose.to(device)
                 val_descriptor = model(image)
 
-                prediction_distance, prediction_idx = nearest_neighbours.kneighbors(val_descriptor.numpy(), 5)
+                prediction_distance, prediction_idx = nearest_neighbours.kneighbors(val_descriptor.numpy(), self.k_neighbour_count)
                 prediction_label = int(np.round(knn_dataset_label[prediction_idx[0][0]]))
                 y_pred.append(prediction_label)
                 y_true.append(label.item())
@@ -62,7 +63,7 @@ class Evaluator(object):
         knn_dataset_features = knn_dataset[:, 0:16]
         knn_dataset_label = knn_dataset[:, 16:17]
         knn_dataset_pose = knn_dataset[:, 17:]
-        nearest_neighbours = NearestNeighbors(n_neighbors=5, algorithm='ball_tree').fit(knn_dataset_features)
+        nearest_neighbours = NearestNeighbors(n_neighbors=self.k_neighbour_count, algorithm='ball_tree').fit(knn_dataset_features)
         return nearest_neighbours, knn_dataset_label, knn_dataset_pose
 
     def build_histogram(self, angular_differences, len_test_dataset, save_path=None):
