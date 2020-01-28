@@ -93,7 +93,7 @@ class Solver(object):
         knn_dataset = np.ndarray([len(template_loader.dataset), 16 + 1 + 4], dtype=np.float64)
         template_embeddings = np.ndarray([0, 16], dtype=np.float64)
         tensorboard_labels = []
-        tensorboard_images = torch.zeros(size=(0, 3, 64, 64), dtype=torch.int)
+        tensorboard_images = torch.zeros(size=(0, 3, 64, 64))
         with torch.no_grad():
             for batch, data in enumerate(template_loader):
                 image, label, pose = data[0].permute(dims=[0, 3, 1, 2]).float(), data[1].float(), torch.tensor(data[2:]).float()
@@ -101,15 +101,15 @@ class Solver(object):
                 descriptor = model(image)
                 knn_dataset[batch, :] = np.append(descriptor.numpy()[0, :], np.append(label.numpy(), pose.numpy()))
                 template_embeddings = np.vstack((template_embeddings, descriptor.numpy()))
-                tensorboard_labels.append(label.item())
-                tensorboard_image = torch.from_numpy(image.numpy().transpose((0, 2, 3, 1)) * self.dataset_dev + self.dataset_mean).int().permute(0, 3, 1, 2)
-                torch.cat((tensorboard_images, tensorboard_image))
+                tensorboard_labels.append(label.int().item())
+                tensorboard_image = torch.from_numpy(image.numpy().transpose((0, 2, 3, 1)) * self.dataset_dev + self.dataset_mean).float().permute(0, 3, 1, 2)
+                tensorboard_images = torch.cat((tensorboard_images, tensorboard_image))
 
-            if self.writer_descriptor is not None:
-                self.writer_descriptor.add_embedding(template_embeddings, metadata=tensorboard_labels, label_img=tensorboard_images, tag='validation_epoch_' + str(current_epoch))
+        if self.writer_descriptor is not None:
+            self.writer_descriptor.add_embedding(template_embeddings, metadata=tensorboard_labels, label_img=tensorboard_images.int(), tag='validation_epoch_' + str(current_epoch))
 
         if save_path is not None:
-            os.makedirs(f'{save_path}{datetime.now().strftime("%m-%d-%Y_T_%H")}')
+            os.makedirs(f'{save_path}{datetime.now().strftime("%m-%d-%Y_T_%H")}', exist_ok=True)
             torch.save(knn_dataset, f'{save_path}{datetime.now().strftime("%m-%d-%Y_T_%H")}/template_descriptor_epoch_{current_epoch}_{datetime.now().strftime("%H-%S")}.pt')
 
         return knn_dataset

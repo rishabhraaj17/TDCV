@@ -1,6 +1,6 @@
 import torch
 from torch.optim.lr_scheduler import ReduceLROnPlateau
-from torch.utils.tensorboard import SummaryWriter
+from tensorboardX import SummaryWriter
 
 from model import DescriptorNetwork
 from loss import TripletAndPairLoss
@@ -9,14 +9,14 @@ from evaluate import Evaluator
 
 import matplotlib.pyplot as plt
 from utils.data_utils import get_train_mean_and_std
-from utils.train_utils import get_template_loader, get_test_loader, get_train_loader, get_test_valid_loader
+from utils.train_utils import get_template_loader, get_train_loader, get_test_valid_loader
 
 
 data_dir = "../dataset/"
 classes = ("ape", "benchvise", "cam", "cat", "duck")
 batch_size = 32
 k_neighbour_count = 5
-epochs = 1
+epochs = 25
 
 save_path = '../models/'
 checkpoint_save_path = '../models/checkpoints/'
@@ -29,10 +29,10 @@ adam_args = {
 
 optim = torch.optim.Adam
 scheduler = ReduceLROnPlateau
-writer_train = None
-writer_val = None
-writer_template = None
-writer_test = None
+writer_train = SummaryWriter(comment='train')
+writer_val = SummaryWriter(comment='validation')
+writer_template = SummaryWriter(comment='template')
+writer_test = SummaryWriter(comment='test')
 
 template_loader = get_template_loader(batch_size=1, shuffle=True, num_workers=0)
 train_loader = get_train_loader(batch_size=batch_size, shuffle=True, num_workers=0)
@@ -59,7 +59,7 @@ def test(net, template_descriptor_pth):
 
 if __name__ == '__main__':
     template_descriptor_path = f'../models/01-28-2020_T_21/template_descriptor_epoch_0_21-58.pt'
-    is_training = False
+    is_training = True
 
     if is_training:
         train()

@@ -106,7 +106,6 @@ class Evaluator(object):
             plot_confusion_matrix(confusion_matrix=confusion_mat, classes=classes,
                                   normalize=False,
                                   title='Without normalization confusion matrix')
-
-        os.makedirs(f'{save_path}test_{datetime.now().strftime("%m-%d-%Y_T_%H")}')
+        os.makedirs(f'{save_path}test_{datetime.now().strftime("%m-%d-%Y_T_%H")}', exist_ok=True)
         plt.savefig(f'{save_path}test_{datetime.now().strftime("%m-%d-%Y_T_%H")}/Confusion_Matrix_epoch_{datetime.now().strftime("%H-%S")}.png')
         self.build_histogram(angular_differences=angular_differences, len_test_dataset=len(test_loader.dataset), save_path=save_path)
