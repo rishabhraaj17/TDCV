@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 
+from datetime import datetime
 
 class Lambda(nn.Module):
     def __init__(self, func):
@@ -24,12 +25,13 @@ class DescriptorNetwork(nn.Module):
                                      nn.Linear(in_features=1008, out_features=256),
                                      nn.ReLU(),
                                      nn.Linear(in_features=256, out_features=16))
+        self.created_at = f'model_{datetime.now().strftime("%m-%d-%Y_T_%H-%M-%S")}'
 
     def forward(self, x):
         return self.network(x)
 
     def save(self, path, save_state_dict=True):
         if save_state_dict:
-            torch.save(self.state_dict(), path + '_state_dict.pt')
+            torch.save(self.state_dict(), path + self.created_at + '_state_dict.pt')
         else:
-            torch.save(self, path + '.pt')
+            torch.save(self, path + self.created_at + '.pt')

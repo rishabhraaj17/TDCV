@@ -48,7 +48,7 @@ def train():
     solver = Solver(loss_function=loss_function, optim_args=adam_args, optimizer=optim, scheduler=scheduler, dataset_mean=m,
                     dataset_dev=std, writer_train=writer_train, writer_val=writer_val, writer_descriptor=writer_template, k_neighbour_count=k_neighbour_count)
 
-    solver.solve(model=model, train_loader=train_loader, val_loader=valid_loader, template_loader=template_loader, num_epochs=epochs, save_path=save_path, save_model=True,
+    solver.solve(model=model, train_loader=train_loader, val_loader=valid_loader, template_loader=template_loader, num_epochs=epochs, save_path=save_path, save_model=True, save_state_dict=True,
                  log_checkpoint=False, checkpoint_dir=checkpoint_save_path, plot_normalized_confusion_mat=True, resume_training=False, resume_checkpoint_file=None)
 
 
@@ -58,12 +58,14 @@ def test(net, template_descriptor_pth):
 
 
 if __name__ == '__main__':
-    date_time = 'dd-mm-yyyy'
-    hours_sec = 'HH-SS'
-    epoch_to_pick = 0
-    template_descriptor_path = f'{save_path}/{date_time}/template_descriptor_epoch_{epoch_to_pick}_{hours_sec}.pt'
-    is_training = True
+    template_descriptor_path = f'../models/01-28-2020_T_21/template_descriptor_epoch_0_21-58.pt'
+    is_training = False
+
     if is_training:
         train()
     else:
+        state_dict_path = f'../models/model_01-28-2020_T_20-59-22_state_dict.pt'
+        state_dict = torch.load(state_dict_path)
+        model: torch.nn.Module = DescriptorNetwork()
+        model.load_state_dict(state_dict)
         test(net=model, template_descriptor_pth=template_descriptor_path)

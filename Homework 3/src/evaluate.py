@@ -82,7 +82,7 @@ class Evaluator(object):
         # Set the xticklabels to a string that tells us what the bin edges were
         ax.set_xticklabels(['{} - {}'.format(bins[i], bins[i + 1]) for i, j in enumerate(hist)])
         if save_path is not None:
-            plt.savefig(f'{save_path}{datetime.now().strftime("%m-%d-%Y_T_%H")}/Test_Histogram_Plot_{datetime.now().strftime("%H-%S")}.png')
+            plt.savefig(f'{save_path}test_{datetime.now().strftime("%m-%d-%Y_T_%H")}/Test_Histogram_Plot_{datetime.now().strftime("%H-%S")}.png')
         plt.show()
 
     def evaluate(self, model, test_loader, template_descriptor_path, plot_normalized_confusion_mat, save_path):
@@ -107,6 +107,6 @@ class Evaluator(object):
                                   normalize=False,
                                   title='Without normalization confusion matrix')
 
-        os.makedirs(f'{save_path}{datetime.now().strftime("%m-%d-%Y_T_%H")}')
-        plt.savefig(f'{save_path}{datetime.now().strftime("%m-%d-%Y_T_%H")}/Confusion_Matrix_epoch_{datetime.now().strftime("%H-%S")}.png')
+        os.makedirs(f'{save_path}test_{datetime.now().strftime("%m-%d-%Y_T_%H")}')
+        plt.savefig(f'{save_path}test_{datetime.now().strftime("%m-%d-%Y_T_%H")}/Confusion_Matrix_epoch_{datetime.now().strftime("%H-%S")}.png')
         self.build_histogram(angular_differences=angular_differences, len_test_dataset=len(test_loader.dataset), save_path=save_path)
