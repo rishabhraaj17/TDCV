@@ -25,7 +25,7 @@ class Solver(object):
         self.writer_train = writer_train
         self.writer_descriptor = writer_descriptor
 
-    def train_step(self, model, optimizer, scheduler, train_loader, current_epoch, device):
+    def train_step(self, model, optimizer, train_loader, current_epoch, device):
         model.train()
 
         train_loss = 0
@@ -43,7 +43,7 @@ class Solver(object):
             train_loss += loss.item()
 
             loss.backward()
-            scheduler.step()
+            optimizer.step()
 
             if batch % 10 == 0 and self.writer_train is not None:
                 self.writer_train.add_scalar('Train/Triplet_Loss', triplet_loss.item(), batch)
@@ -145,7 +145,7 @@ class Solver(object):
               log_checkpoint=False, checkpoint_dir=None, resume_training=False, resume_checkpoint_file=None, plot_normalized_confusion_mat=True):
         optimizer = self.optimizer(model.parameters(), **self.optim_args)
         # LR-Plateau
-        scheduler = self.scheduler(optimizer, 'min')
+        scheduler = self.scheduler(optimizer, 'max')
 
         device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         classes = ["ape", "benchvise", "cam", "cat", "duck"]
@@ -164,7 +164,7 @@ class Solver(object):
             print('START TRAINING')
 
         for epoch in range(resume_epoch, num_epochs):
-            self.train_step(model=model, train_loader=train_loader, current_epoch=epoch, optimizer=optimizer, scheduler=scheduler, device=device)
+            self.train_step(model=model, train_loader=train_loader, current_epoch=epoch, optimizer=optimizer, device=device)
             nearest_neighbours, knn_dataset_label, knn_dataset_pose = self.build_template_space(model=model, template_loader=template_loader, current_epoch=epoch,
                                                                                                 device=device, save_path=save_path)
             val_accuracy, angular_differences, y_true, y_pred = self.validation_step(model=model, val_loader=val_loader, nearest_neighbours=nearest_neighbours,
@@ -184,6 +184,7 @@ class Solver(object):
 
             plt.savefig(f'{save_path}/{datetime.now().strftime("%m-%d-%Y")}/Confusion_Matrix_epoch_{epoch}_{datetime.now().strftime("%H-%S")}.png')
             self.build_histogram(angular_differences=angular_differences, len_valid_dataset=len(val_loader.dataset), current_epoch=epoch, save_path=save_path)
+            scheduler.step(val_accuracy)
 
             if log_checkpoint:
                 checkpoint_dict = {
