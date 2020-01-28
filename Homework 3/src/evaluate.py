@@ -10,16 +10,12 @@ from utils.data_utils import del_theta_quaternion
 from utils.vis_utils import plot_confusion_matrix
 
 
-# Todo: make able to enter neighbours
-
-
 class Evaluator(object):
-    def __init__(self, dataset_mean, dataset_dev, writer_test=None, writer_descriptor=None, k_neighbour_count=5):
+    def __init__(self, dataset_mean, dataset_dev, writer_test=None, k_neighbour_count=5):
         self.k_neighbour_count = k_neighbour_count
         self.dataset_dev = dataset_dev
         self.dataset_mean = dataset_mean
         self.writer_test = writer_test
-        self.writer_descriptor = writer_descriptor
 
     def test(self, model, test_loader, nearest_neighbours, knn_dataset_label, knn_dataset_pose, device):
         model.eval()

@@ -13,7 +13,8 @@ from utils.vis_utils import plot_confusion_matrix
 
 
 class Solver(object):
-    def __init__(self, loss_function, optim_args, dataset_mean, dataset_dev, optimizer=optim.Adam, writer_train=None, writer_val=None, writer_descriptor=None, k_neighbour_count=5):
+    def __init__(self, loss_function, optim_args, scheduler, dataset_mean, dataset_dev, optimizer=optim.Adam, writer_train=None, writer_val=None, writer_descriptor=None, k_neighbour_count=5):
+        self.scheduler = scheduler
         self.k_neighbour_count = k_neighbour_count
         self.optimizer = optimizer
         self.loss_function = loss_function
@@ -143,6 +144,8 @@ class Solver(object):
     def solve(self, model, train_loader, val_loader, template_loader, num_epochs, save_path, save_model=False, save_state_dict=True,
               log_checkpoint=False, checkpoint_dir=None, resume_training=False, resume_checkpoint_file=None, plot_normalized_confusion_mat=True):
         optimizer = self.optimizer(model.parameters(), **self.optim_args)
+        # LR-Plateau
+        optimizer = self.scheduler(optimizer, 'min')
 
         device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         classes = ["ape", "benchvise", "cam", "cat", "duck"]
