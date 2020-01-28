@@ -23,36 +23,37 @@ def load_checkpoint(checkpoint_f_path, model, optimizer):
     return model, optimizer, checkpoint['epoch']
 
 
-def get_train_valid_loader(batch_size,
-                           valid_size=0.2,
-                           shuffle=True,
-                           num_workers=0,
-                           pin_memory=True):
+def get_test_valid_loader(batch_size,
+                          valid_size=0.1,
+                          shuffle=True,
+                          num_workers=0,
+                          pin_memory=True):
     if 0 <= valid_size <= 1:
         assert valid_size, "dataset split is incorrect"
 
     # dataset = TripletDataset(data_dir='../dataset/', train=False, online=False)
-    dataset = TrainDataset(data_dir='../dataset/')
+    dataset = TestDataset(data_dir='../dataset/')
 
     # Validation and Train Split
     num_samples = len(dataset)
     indices = list(range(num_samples))
     split = int(valid_size * num_samples)
 
-    train_idx, valid_idx = indices[split:], indices[:split]
+    test_idx, valid_idx = indices[split:], indices[:split]
 
-    train_sampler = SubsetRandomSampler(train_idx)
+    test_sampler = SubsetRandomSampler(test_idx)
     valid_sampler = SubsetRandomSampler(valid_idx)
 
-    train_loader = torch.utils.data.DataLoader(dataset,
-                                               batch_size=batch_size, sampler=train_sampler,
-                                               num_workers=num_workers, pin_memory=pin_memory, shuffle=shuffle)
+    # sampler option is mutually exclusive with shuffle
+    test_loader = torch.utils.data.DataLoader(dataset,
+                                              batch_size=batch_size, sampler=test_sampler,
+                                              num_workers=num_workers, pin_memory=pin_memory)
 
     valid_loader = torch.utils.data.DataLoader(dataset,
                                                batch_size=batch_size, sampler=valid_sampler,
-                                               num_workers=num_workers, pin_memory=pin_memory, shuffle=shuffle)
+                                               num_workers=num_workers, pin_memory=pin_memory)
 
-    return train_loader, valid_loader
+    return test_loader, valid_loader
 
 
 def get_test_loader(batch_size=1,
@@ -78,5 +79,5 @@ def get_train_loader(batch_size,
                      num_workers=0,
                      pin_memory=True):
     dataset = TripletDataset(data_dir='../dataset/', train=True, online=False)
-    data_loader = torch.utils.data.DataLoader(dataset=dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers, pin_memory=pin_memory)
+    data_loader = torch.utils.data.DataLoader(dataset=dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers, pin_memory=pin_memory, drop_last=True)
     return data_loader

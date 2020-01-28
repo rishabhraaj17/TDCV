@@ -9,14 +9,14 @@ from evaluate import Evaluator
 
 import matplotlib.pyplot as plt
 from utils.data_utils import get_train_mean_and_std
-from utils.train_utils import get_template_loader, get_test_loader, get_train_loader, get_train_valid_loader
+from utils.train_utils import get_template_loader, get_test_loader, get_train_loader, get_test_valid_loader
 
 
-data_dir = "../../dataset/"
+data_dir = "../dataset/"
 classes = ("ape", "benchvise", "cam", "cat", "duck")
 batch_size = 32
 k_neighbour_count = 5
-epochs = 10
+epochs = 1
 
 save_path = '../models/'
 checkpoint_save_path = '../models/checkpoints/'
@@ -34,9 +34,9 @@ writer_val = None
 writer_template = None
 writer_test = None
 
-template_loader = get_template_loader(batch_size=batch_size, shuffle=True, num_workers=0)
+template_loader = get_template_loader(batch_size=1, shuffle=True, num_workers=0)
 train_loader = get_train_loader(batch_size=batch_size, shuffle=True, num_workers=0)
-_, valid_loader = get_train_valid_loader(batch_size=32, shuffle=True, num_workers=0)
+test_loader, valid_loader = get_test_valid_loader(batch_size=1, shuffle=True, num_workers=0)
 
 m, std = get_train_mean_and_std(data_dir, classes)
 
@@ -48,14 +48,13 @@ def train():
     solver = Solver(loss_function=loss_function, optim_args=adam_args, optimizer=optim, scheduler=scheduler, dataset_mean=m,
                     dataset_dev=std, writer_train=writer_train, writer_val=writer_val, writer_descriptor=writer_template, k_neighbour_count=k_neighbour_count)
 
-    solver.solve(model=model, train_loader=train_loader, val_loader=valid_loader, template_loader=template_loader, num_epochs=epochs, save_path=save_path, save_model=False,
+    solver.solve(model=model, train_loader=train_loader, val_loader=valid_loader, template_loader=template_loader, num_epochs=epochs, save_path=save_path, save_model=True,
                  log_checkpoint=False, checkpoint_dir=checkpoint_save_path, plot_normalized_confusion_mat=True, resume_training=False, resume_checkpoint_file=None)
 
 
-def test(net, template_descriptor_path):
-    test_loader = get_test_loader()
+def test(net, template_descriptor_pth):
     evaluator = Evaluator(dataset_mean=m, dataset_dev=std, writer_test=writer_test, k_neighbour_count=k_neighbour_count)
-    evaluator.evaluate(model=net, test_loader=test_loader, template_descriptor_path=template_descriptor_path, plot_normalized_confusion_mat=True, save_path=save_path)
+    evaluator.evaluate(model=net, test_loader=test_loader, template_descriptor_path=template_descriptor_pth, plot_normalized_confusion_mat=True, save_path=save_path)
 
 
 if __name__ == '__main__':
@@ -67,4 +66,4 @@ if __name__ == '__main__':
     if is_training:
         train()
     else:
-        test(net=model, template_descriptor_path=template_descriptor_path)
+        test(net=model, template_descriptor_pth=template_descriptor_path)

@@ -13,7 +13,7 @@ def plot_confusion_matrix(confusion_matrix, classes,
                           title='Confusion matrix',
                           cmap='Blues'):
     if normalize:
-        confusion_matrix = confusion_matrix.astype('float') / confusion_matrix.sum(axis=1)[:, np.newaxis]
+        confusion_matrix = confusion_matrix.astype('float') / (confusion_matrix.sum(axis=1)[:, np.newaxis] + np.finfo(np.float32).eps)
 
     plt.imshow(confusion_matrix, interpolation='nearest', cmap=cmap)
     plt.title(title)

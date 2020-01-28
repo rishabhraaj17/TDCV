@@ -1,3 +1,5 @@
+import os
+
 import torch
 import torch.optim as optim
 
@@ -32,9 +34,8 @@ class Solver(object):
 
         for batch, data in enumerate(train_loader):
             anchor, puller, pusher = data
-            anchor, puller, pusher = anchor.float().to(device), puller.float().to(device), pusher.float().to(device)
 
-            X = torch.cat([anchor[0], puller[0], pusher[0]]).permute(dims=[0, 3, 1, 2])
+            X = torch.cat([anchor[0], puller[0], pusher[0]]).permute(dims=[0, 3, 1, 2]).float().to(device)
 
             optimizer.zero_grad()
             y_pred = model(X)
@@ -52,7 +53,7 @@ class Solver(object):
         train_loss /= len(train_loader.dataset)
 
         if self.writer_train is not None:
-            self.writer_train.add_scalar('Training Loss', train_loss, current_epoch)
+            self.writer_train.add_scalar('Train/Total_Loss', train_loss, current_epoch)
 
         print(f'Epoch: {current_epoch}, Training Loss: {train_loss}')
 
@@ -83,7 +84,7 @@ class Solver(object):
         val_accuracy /= len(val_loader.dataset)
 
         if self.writer_val is not None:
-            self.writer_val.add_scalar('Validation Accuracy', val_accuracy, current_epoch)
+            self.writer_val.add_scalar('Validation/Accuracy', val_accuracy, current_epoch)
 
         print(f'Epoch : {current_epoch}, Validation Accuracy: {val_accuracy}')
         return val_accuracy, angular_differences, y_true, y_pred
@@ -92,23 +93,24 @@ class Solver(object):
         knn_dataset = np.ndarray([len(template_loader.dataset), 16 + 1 + 4], dtype=np.float64)
         template_embeddings = np.ndarray([0, 16], dtype=np.float64)
         tensorboard_labels = []
-        tensorboard_images = torch.zeros(size=(0, 3, 64, 64))
+        tensorboard_images = torch.zeros(size=(0, 3, 64, 64), dtype=torch.int)
         with torch.no_grad():
             for batch, data in enumerate(template_loader):
                 image, label, pose = data[0].permute(dims=[0, 3, 1, 2]).float(), data[1].float(), torch.tensor(data[2:]).float()
                 image, label, pose = image.to(device), label.to(device), pose.to(device)
                 descriptor = model(image)
-                knn_dataset[batch, :] = np.append(descriptor.numpy()[0, :], label.numpy(), pose.numpy())
+                knn_dataset[batch, :] = np.append(descriptor.numpy()[0, :], np.append(label.numpy(), pose.numpy()))
                 template_embeddings = np.vstack((template_embeddings, descriptor.numpy()))
                 tensorboard_labels.append(label.item())
-                tensorboard_image = torch.from_numpy(image.numpy() * self.dataset_dev + self.dataset_mean).int().permute(0, 3, 1, 2).squeeze()
-                torch.cat((tensorboard_images, tensorboard_image.view(-1, *tensorboard_image.shape)))
+                tensorboard_image = torch.from_numpy(image.numpy().transpose((0, 2, 3, 1)) * self.dataset_dev + self.dataset_mean).int().permute(0, 3, 1, 2)
+                torch.cat((tensorboard_images, tensorboard_image))
 
             if self.writer_descriptor is not None:
                 self.writer_descriptor.add_embedding(template_embeddings, metadata=tensorboard_labels, label_img=tensorboard_images, tag='validation_epoch_' + str(current_epoch))
 
         if save_path is not None:
-            torch.save(knn_dataset, f'{save_path}/{datetime.now().strftime("%m-%d-%Y")}/template_descriptor_epoch_{current_epoch}_{datetime.now().strftime("%H-%S")}.pt')
+            os.makedirs(f'{save_path}{datetime.now().strftime("%m-%d-%Y_T_%H")}')
+            torch.save(knn_dataset, f'{save_path}{datetime.now().strftime("%m-%d-%Y_T_%H")}/template_descriptor_epoch_{current_epoch}_{datetime.now().strftime("%H-%S")}.pt')
 
         return knn_dataset
 
@@ -138,7 +140,7 @@ class Solver(object):
         # Set the xticklabels to a string that tells us what the bin edges were
         ax.set_xticklabels(['{} - {}'.format(bins[i], bins[i + 1]) for i, j in enumerate(hist)])
         if save_path is not None:
-            plt.savefig(f'{save_path}/{datetime.now().strftime("%m-%d-%Y")}/Validation_Histogram_Plot_epoch_{current_epoch}_{datetime.now().strftime("%H-%S")}.png')
+            plt.savefig(f'{save_path}{datetime.now().strftime("%m-%d-%Y_T_%H")}/Validation_Histogram_Plot_epoch_{current_epoch}_{datetime.now().strftime("%H-%S")}.png')
         plt.show()
 
     def solve(self, model, train_loader, val_loader, template_loader, num_epochs, save_path, save_model=False, save_state_dict=True,
@@ -182,7 +184,7 @@ class Solver(object):
                                       normalize=False,
                                       title='Without normalization confusion matrix')
 
-            plt.savefig(f'{save_path}/{datetime.now().strftime("%m-%d-%Y")}/Confusion_Matrix_epoch_{epoch}_{datetime.now().strftime("%H-%S")}.png')
+            plt.savefig(f'{save_path}{datetime.now().strftime("%m-%d-%Y_T_%H")}/Confusion_Matrix_epoch_{epoch}_{datetime.now().strftime("%H-%S")}.png')
             self.build_histogram(angular_differences=angular_differences, len_valid_dataset=len(val_loader.dataset), current_epoch=epoch, save_path=save_path)
             scheduler.step(val_accuracy)
 
