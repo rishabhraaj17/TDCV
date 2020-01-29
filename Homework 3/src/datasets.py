@@ -5,8 +5,6 @@ from torchvision.datasets import VisionDataset
 from utils.data_utils import del_theta_quaternion, get_train_mean_and_std, get_normalized_datasets
 
 
-# Notes: Anchor pose and puller pose is same, maybe coarse and fine has same pose, for 1 sample looks like it is the case
-
 class DataSample(object):
     def __init__(self, image: torch.Tensor, label: int, pose: torch.Tensor):
         super(DataSample, self).__init__()

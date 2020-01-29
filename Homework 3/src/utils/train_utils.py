@@ -31,7 +31,6 @@ def get_test_valid_loader(batch_size,
     if 0 <= valid_size <= 1:
         assert valid_size, "dataset split is incorrect"
 
-    # dataset = TripletDataset(data_dir='../dataset/', train=False, online=False)
     dataset = TestDataset(data_dir='../dataset/')
 
     # Validation and Train Split

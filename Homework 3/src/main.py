@@ -7,7 +7,6 @@ from loss import TripletAndPairLoss
 from train import Solver
 from evaluate import Evaluator
 
-import matplotlib.pyplot as plt
 from utils.data_utils import get_train_mean_and_std
 from utils.train_utils import get_template_loader, get_train_loader, get_test_valid_loader
 

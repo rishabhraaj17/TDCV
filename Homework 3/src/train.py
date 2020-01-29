@@ -125,23 +125,18 @@ class Solver(object):
     def build_histogram(self, angular_differences, len_valid_dataset, current_epoch, save_path=None):
         bins = list(range(0, 181, 10))
         hist, bin_edges = np.histogram(angular_differences, bins=bins)
-        print('Histogram for each degree', hist)
         bins = [0, 10, 20, 40, 180]
         hist, bin_edges = np.histogram(angular_differences, bins=bins)
         hist = hist / len_valid_dataset
-        print(hist)
         hist = np.cumsum(hist)
-        print(hist)
         fig, ax = plt.subplots()
-        # Plot the histogram heights against integers on the x axis
         ax.bar(range(len(hist)), hist, width=1)
-        # Set the ticks to the middle of the bars
         ax.set_xticks([i for i, j in enumerate(hist)])
-        # Set the xticklabels to a string that tells us what the bin edges were
         ax.set_xticklabels(['{} - {}'.format(bins[i], bins[i + 1]) for i, j in enumerate(hist)])
         if save_path is not None:
             plt.savefig(f'{save_path}{datetime.now().strftime("%m-%d-%Y_T_%H")}/Validation_Histogram_Plot_epoch_{current_epoch}_{datetime.now().strftime("%H-%S")}.png')
         plt.show()
+        return fig
 
     def solve(self, model, train_loader, val_loader, template_loader, num_epochs, save_path, save_model=False, save_state_dict=True,
               log_checkpoint=False, checkpoint_dir=None, resume_training=False, resume_checkpoint_file=None, plot_normalized_confusion_mat=True):
@@ -171,18 +166,16 @@ class Solver(object):
                                                                                                 device=device, save_path=save_path)
             val_accuracy, angular_differences, y_true, y_pred = self.validation_step(model=model, val_loader=val_loader, nearest_neighbours=nearest_neighbours,
                                                                                      knn_dataset_label=knn_dataset_label, knn_dataset_pose=knn_dataset_pose, current_epoch=epoch, device=device)
-            confusion_mat = confusion_matrix(y_true=y_true, y_pred=y_pred)  # TODO: try inbuilt confusion matrix
+            confusion_mat = confusion_matrix(y_true=y_true, y_pred=y_pred)
             np.set_printoptions(precision=2)
             plt.figure()
 
             if plot_normalized_confusion_mat:
                 plot_confusion_matrix(confusion_matrix=confusion_mat, classes=classes,
-                                      normalize=True,
-                                      title='Normalized confusion matrix')
+                                      normalize=True, test=False)
             else:
                 plot_confusion_matrix(confusion_matrix=confusion_mat, classes=classes,
-                                      normalize=False,
-                                      title='Without normalization confusion matrix')
+                                      normalize=False, test=False)
 
             plt.savefig(f'{save_path}{datetime.now().strftime("%m-%d-%Y_T_%H")}/Confusion_Matrix_epoch_{epoch}_{datetime.now().strftime("%H-%S")}.png')
             self.build_histogram(angular_differences=angular_differences, len_valid_dataset=len(val_loader.dataset), current_epoch=epoch, save_path=save_path)

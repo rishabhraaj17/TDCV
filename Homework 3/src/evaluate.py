@@ -33,7 +33,6 @@ class Evaluator(object):
                 image, label, pose = image.to(device), label.to(device), pose.to(device)
                 val_descriptor = model(image)
 
-                # TODO: verify-- pred distance to k-NN
                 prediction_distance, prediction_idx = nearest_neighbours.kneighbors(val_descriptor.numpy(), self.k_neighbour_count)
                 prediction_label = int(np.round(knn_dataset_label[prediction_idx[0][0]]))
                 label = label.int().item()
@@ -69,23 +68,18 @@ class Evaluator(object):
     def build_histogram(self, angular_differences, len_test_dataset, save_path=None):
         bins = list(range(0, 181, 10))
         hist, bin_edges = np.histogram(angular_differences, bins=bins)
-        print('Histogram for each degree', hist)
         bins = [0, 10, 20, 40, 180]
         hist, bin_edges = np.histogram(angular_differences, bins=bins)
         hist = hist / len_test_dataset
-        print(hist)
         hist = np.cumsum(hist)
-        print(hist)
         fig, ax = plt.subplots()
-        # Plot the histogram heights against integers on the x axis
         ax.bar(range(len(hist)), hist, width=1)
-        # Set the ticks to the middle of the bars
         ax.set_xticks([i for i, j in enumerate(hist)])
-        # Set the xticklabels to a string that tells us what the bin edges were
         ax.set_xticklabels(['{} - {}'.format(bins[i], bins[i + 1]) for i, j in enumerate(hist)])
         if save_path is not None:
             plt.savefig(f'{save_path}test_{datetime.now().strftime("%m-%d-%Y_T_%H")}/Test_Histogram_Plot_{datetime.now().strftime("%H-%S")}.png')
         plt.show()
+        return fig
 
     def evaluate(self, model, test_loader, template_descriptor_path, plot_normalized_confusion_mat, save_path):
         device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
@@ -97,18 +91,16 @@ class Evaluator(object):
         test_accuracy, angular_differences, y_true, y_pred = self.test(model=model, test_loader=test_loader, nearest_neighbours=nearest_neighbours,
                                                                        knn_dataset_label=knn_dataset_label, knn_dataset_pose=knn_dataset_pose, device=device)
         # normalize must be one of {'true', 'pred', 'all', None}
-        confusion_mat = confusion_matrix(y_true=y_true, y_pred=y_pred)  # TODO: try inbuilt confusion matrix
+        confusion_mat = confusion_matrix(y_true=y_true, y_pred=y_pred)
         np.set_printoptions(precision=2)
         plt.figure()
 
         if plot_normalized_confusion_mat:
             plot_confusion_matrix(confusion_matrix=confusion_mat, classes=classes,
-                                  normalize=True,
-                                  title='Normalized confusion matrix')
+                                  normalize=True, test=True)
         else:
             plot_confusion_matrix(confusion_matrix=confusion_mat, classes=classes,
-                                  normalize=False,
-                                  title='Without normalization confusion matrix')
+                                  normalize=False, test=True)
         os.makedirs(f'{save_path}test_{datetime.now().strftime("%m-%d-%Y_T_%H")}', exist_ok=True)
         plt.savefig(f'{save_path}test_{datetime.now().strftime("%m-%d-%Y_T_%H")}/Confusion_Matrix_epoch_{datetime.now().strftime("%H-%S")}.png')
         self.build_histogram(angular_differences=angular_differences, len_test_dataset=len(test_loader.dataset), save_path=save_path)

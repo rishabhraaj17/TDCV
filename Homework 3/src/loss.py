@@ -10,10 +10,6 @@ class TripletAndPairLoss(nn.Module):
         self.pair_loss_weight_factor = pair_loss_weight_factor
 
     def forward(self, x):
-        # anchor = x[0:self.batch_size * 3:3]
-        # positive = x[1:self.batch_size * 3:3]
-        # negative = x[2:self.batch_size * 3:3]
-        # New batch way
         anchor_end = self.batch_size
         positive_end = self.batch_size * 2
         anchor = x[0:anchor_end]

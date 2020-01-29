@@ -3,6 +3,7 @@ import torch.nn as nn
 
 from datetime import datetime
 
+
 class Lambda(nn.Module):
     def __init__(self, func):
         super().__init__()

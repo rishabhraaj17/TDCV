@@ -5,8 +5,6 @@ from albumentations import (HueSaturationValue, RGBShift, RandomBrightnessContra
 import itertools
 import torch
 
-from utils.vis_utils import show_image
-
 
 def get_image(image_path: str, use_cv2: bool = True):
     if use_cv2:
@@ -40,7 +38,7 @@ def get_train_idxs(file: str):
         for line in f:
             training_indices: list = [int(i) for i in line.split(',')]
             return training_indices
-    return None  # fixme: remove it
+    return None
 
 
 def get_coarse_data(data_dir: str, classes: tuple):
