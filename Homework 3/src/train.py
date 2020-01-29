@@ -15,7 +15,7 @@ from utils.vis_utils import plot_confusion_matrix
 
 
 class Solver(object):
-    def __init__(self, loss_function, optim_args, scheduler, dataset_mean, dataset_dev, optimizer=optim.Adam, writer_train=None, writer_val=None, writer_descriptor=None, k_neighbour_count=5):
+    def __init__(self, loss_function, optim_args, scheduler, dataset_mean, dataset_dev, optimizer=optim.Adam, writer=None, k_neighbour_count=5):
         self.scheduler = scheduler
         self.k_neighbour_count = k_neighbour_count
         self.optimizer = optimizer
@@ -23,9 +23,7 @@ class Solver(object):
         self.optim_args = optim_args
         self.dataset_dev = dataset_dev
         self.dataset_mean = dataset_mean
-        self.writer_val = writer_val
-        self.writer_train = writer_train
-        self.writer_descriptor = writer_descriptor
+        self.writer = writer
 
     def train_step(self, model, optimizer, train_loader, current_epoch, device):
         model.train()
@@ -46,14 +44,14 @@ class Solver(object):
             loss.backward()
             optimizer.step()
 
-            if batch % 10 == 0 and self.writer_train is not None:
-                self.writer_train.add_scalar('Train/Triplet_Loss', triplet_loss.item(), batch)
-                self.writer_train.add_scalar('Train/Pair_Loss', pair_loss.item(), batch)
+            if batch % 10 == 0 and self.writer is not None:
+                self.writer.add_scalar('Train/Triplet_Loss', triplet_loss.item(), batch)
+                self.writer.add_scalar('Train/Pair_Loss', pair_loss.item(), batch)
 
         train_loss /= len(train_loader.dataset)
 
-        if self.writer_train is not None:
-            self.writer_train.add_scalar('Train/Total_Loss', train_loss, current_epoch)
+        if self.writer is not None:
+            self.writer.add_scalar('Train/Total_Loss', train_loss, current_epoch)
 
         print(f'Epoch: {current_epoch}, Training Loss: {train_loss}')
 
@@ -83,8 +81,8 @@ class Solver(object):
 
         val_accuracy /= len(val_loader.dataset)
 
-        if self.writer_val is not None:
-            self.writer_val.add_scalar('Validation/Accuracy', val_accuracy, current_epoch)
+        if self.writer is not None:
+            self.writer.add_scalar('Validation/Accuracy', val_accuracy, current_epoch)
 
         print(f'Epoch : {current_epoch}, Validation Accuracy: {val_accuracy}')
         return val_accuracy, angular_differences, y_true, y_pred
@@ -105,8 +103,8 @@ class Solver(object):
                 tensorboard_image = torch.from_numpy(image.numpy().transpose((0, 2, 3, 1)) * self.dataset_dev + self.dataset_mean).float().permute(0, 3, 1, 2)
                 tensorboard_images = torch.cat((tensorboard_images, tensorboard_image))
 
-        if self.writer_descriptor is not None:
-            self.writer_descriptor.add_embedding(template_embeddings, metadata=tensorboard_labels, label_img=tensorboard_images.int(), tag='validation_epoch_' + str(current_epoch))
+        if self.writer is not None:
+            self.writer.add_embedding(template_embeddings, metadata=tensorboard_labels, label_img=tensorboard_images.int(), tag='Embeddings/epoch_' + str(current_epoch))
 
         if save_path is not None:
             os.makedirs(f'{save_path}{datetime.now().strftime("%m-%d-%Y_T_%H")}', exist_ok=True)
