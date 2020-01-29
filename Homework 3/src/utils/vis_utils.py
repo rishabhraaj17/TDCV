@@ -35,9 +35,10 @@ def plot_confusion_matrix(confusion_matrix, classes,
     # plt.tight_layout()
 
     confusion_matrix = confusion_matrix.astype(np.int)
-    df_cm = pd.DataFrame(
-        confusion_matrix, index=classes, columns=classes,
-    )
+    # df_cm = pd.DataFrame(
+    #     confusion_matrix, index=classes, columns=classes,
+    # )
+    df_cm = pd.DataFrame(confusion_matrix)
     # fig = plt.figure(figsize=figsize)
     fig = plt.figure()
     try:
