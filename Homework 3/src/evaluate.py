@@ -33,11 +33,13 @@ class Evaluator(object):
                 image, label, pose = image.to(device), label.to(device), pose.to(device)
                 val_descriptor = model(image)
 
+                # TODO: verify-- pred distance to k-NN
                 prediction_distance, prediction_idx = nearest_neighbours.kneighbors(val_descriptor.numpy(), self.k_neighbour_count)
                 prediction_label = int(np.round(knn_dataset_label[prediction_idx[0][0]]))
+                label = label.int().item()
                 y_pred.append(prediction_label)
-                y_true.append(label.item())
-                if prediction_label == label.item():
+                y_true.append(label)
+                if prediction_label == label:
                     test_accuracy += 1
                     angular_difference = del_theta_quaternion(knn_dataset_pose[prediction_idx[0][0]],
                                                               pose.numpy())
@@ -59,7 +61,7 @@ class Evaluator(object):
     def build_template_space(self, load_path, device):
         knn_dataset = self.load_template_descriptor(load_path=load_path, device=device)
         knn_dataset_features = knn_dataset[:, 0:16]
-        knn_dataset_label = knn_dataset[:, 16:17]
+        knn_dataset_label = knn_dataset[:, 16:17].astype(np.int)
         knn_dataset_pose = knn_dataset[:, 17:]
         nearest_neighbours = NearestNeighbors(n_neighbors=self.k_neighbour_count, algorithm='ball_tree').fit(knn_dataset_features)
         return nearest_neighbours, knn_dataset_label, knn_dataset_pose
@@ -94,7 +96,8 @@ class Evaluator(object):
         nearest_neighbours, knn_dataset_label, knn_dataset_pose = self.build_template_space(load_path=template_descriptor_path, device=device)
         test_accuracy, angular_differences, y_true, y_pred = self.test(model=model, test_loader=test_loader, nearest_neighbours=nearest_neighbours,
                                                                        knn_dataset_label=knn_dataset_label, knn_dataset_pose=knn_dataset_pose, device=device)
-        confusion_mat = confusion_matrix(y_true=y_true, y_pred=y_pred)
+        # normalize must be one of {'true', 'pred', 'all', None}
+        confusion_mat = confusion_matrix(y_true=y_true, y_pred=y_pred)  # TODO: try inbuilt confusion matrix
         np.set_printoptions(precision=2)
         plt.figure()
 

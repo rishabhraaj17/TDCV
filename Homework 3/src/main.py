@@ -51,7 +51,7 @@ def train():
 
 def test(net, template_descriptor_pth):
     evaluator = Evaluator(dataset_mean=m, dataset_dev=std, writer=writer, k_neighbour_count=k_neighbour_count)
-    evaluator.evaluate(model=net, test_loader=test_loader, template_descriptor_path=template_descriptor_pth, plot_normalized_confusion_mat=True, save_path=save_path)
+    evaluator.evaluate(model=net, test_loader=test_loader, template_descriptor_path=template_descriptor_pth, plot_normalized_confusion_mat=False, save_path=save_path)
 
 
 if __name__ == '__main__':
