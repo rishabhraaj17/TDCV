@@ -56,7 +56,7 @@ def test(net, template_descriptor_pth):
 
 if __name__ == '__main__':
     template_descriptor_path = f'../models/01-29-2020_T_21/template_descriptor_epoch_24_21-53.pt'
-    is_training = True
+    is_training = False
 
     if is_training:
         train()
