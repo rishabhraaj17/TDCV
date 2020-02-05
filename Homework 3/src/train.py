@@ -69,7 +69,6 @@ class Solver(object):
                 image, label, pose = image.to(device), label.to(device), pose.to(device)
                 val_descriptor = model(image)
 
-                # TODO: verify
                 prediction_distance, prediction_idx = nearest_neighbours.kneighbors(val_descriptor.clone().detach().cpu().numpy(), self.k_neighbour_count)
                 prediction_label = int(np.round(knn_dataset_label[prediction_idx[0][0]]))
                 label = label.int().item()

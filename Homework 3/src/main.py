@@ -30,9 +30,9 @@ optim = torch.optim.Adam
 scheduler = ReduceLROnPlateau
 writer = SummaryWriter()
 
-template_loader = get_template_loader(batch_size=1, shuffle=True, num_workers=0)
-train_loader = get_train_loader(batch_size=batch_size, shuffle=True, num_workers=0)
-test_loader, valid_loader = get_test_valid_loader(batch_size=1, shuffle=True, num_workers=0)
+template_loader = get_template_loader(batch_size=1, shuffle=True, num_workers=8)
+train_loader = get_train_loader(batch_size=batch_size, shuffle=True, num_workers=8)
+test_loader, valid_loader = get_test_valid_loader(batch_size=1, shuffle=True, num_workers=8)
 
 # m, std = get_train_mean_and_std(data_dir, classes)
 m, std = [37.11641652, 41.60517811, 48.8279312], [52.97441827, 57.09825236, 67.82412182]
@@ -56,7 +56,7 @@ def test(net, template_descriptor_pth):
 
 if __name__ == '__main__':
     template_descriptor_path = f'../models/01-29-2020_T_21/template_descriptor_epoch_24_21-53.pt'
-    is_training = False
+    is_training = True
 
     if is_training:
         train()

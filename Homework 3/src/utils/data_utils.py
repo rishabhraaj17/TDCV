@@ -179,7 +179,7 @@ def get_random_hue_shift_image(image):
 def get_augmented_dataset(data_dir: str, classes: tuple, num_samples_augment=2):
     """
     Only augment train dataset
-    Using too much memory, try later again - TODO
+    Using too much memory, try later again
     """
     db, train, test = get_datasets(data_dir, classes)
     for sample in train:
@@ -214,7 +214,7 @@ def get_normalized_datasets(data_dir: str, classes: tuple, mean: np.ndarray, std
     train_db.extend(real_train_data)
     coarse_data = normalize(coarse_data, mean, std)
     train_db = normalize(train_db, mean, std)
-    real_test_data = normalize(real_test_data, mean, std)  # using train mean and std for test too. fixme if performance issues aries
+    real_test_data = normalize(real_test_data, mean, std)
     return coarse_data, train_db, real_test_data
 
 
@@ -233,6 +233,7 @@ if __name__ == '__main__':
     print(np.max(train[0][0]))
     print(np.max(test[0][0]))
     # print(len(db), len(train), len(test))
+    # Save it for faster processing!
     # save(db, data_dir, 'S_db')
     # save(train, data_dir, 'S_train')
     # save(test, data_dir, 'S_test')
