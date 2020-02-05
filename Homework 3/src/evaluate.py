@@ -81,6 +81,31 @@ class Evaluator(object):
         plt.show()
         return fig
 
+    def test_embeddings_visualizer(self, model, test_loader, device, save_path=None):
+        knn_dataset = np.ndarray([len(test_loader.dataset), 16 + 1 + 4], dtype=np.float64)
+        test_embeddings = np.ndarray([0, 16], dtype=np.float64)
+        tensorboard_labels = []
+        tensorboard_images = torch.zeros(size=(0, 3, 64, 64))
+        with torch.no_grad():
+            for batch, data in enumerate(test_loader):
+                image, label, pose = data[0].permute(dims=[0, 3, 1, 2]).float(), data[1].float(), torch.tensor(data[2:]).float()
+                image, label, pose = image.to(device), label.to(device), pose.to(device)
+                descriptor = model(image)
+                knn_dataset[batch, :] = np.append(descriptor.numpy()[0, :], np.append(label.numpy(), pose.numpy()))
+                test_embeddings = np.vstack((test_embeddings, descriptor.numpy()))
+                tensorboard_labels.append(label.int().item())
+                tensorboard_image = torch.from_numpy(image.numpy().transpose((0, 2, 3, 1)) * self.dataset_dev + self.dataset_mean).float().permute(0, 3, 1, 2)
+                tensorboard_images = torch.cat((tensorboard_images, tensorboard_image))
+
+        if self.writer is not None:
+            self.writer.add_embedding(test_embeddings, metadata=tensorboard_labels, label_img=tensorboard_images.int(), tag='Test_Embeddings/model_' + str(model.created_at))
+
+        if save_path is not None:
+            os.makedirs(f'{save_path}{datetime.now().strftime("%m-%d-%Y_T_%H")}', exist_ok=True)
+            torch.save(knn_dataset, f'{save_path}{datetime.now().strftime("%m-%d-%Y_T_%H")}/Test_Embeddings_model_{str(model.created_at)}_{datetime.now().strftime("%H-%S")}.pt')
+
+        return knn_dataset
+
     def evaluate(self, model, test_loader, template_descriptor_path, plot_normalized_confusion_mat, save_path):
         device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
         classes = ["ape", "benchvise", "cam", "cat", "duck"]
@@ -104,3 +129,4 @@ class Evaluator(object):
         os.makedirs(f'{save_path}test_{datetime.now().strftime("%m-%d-%Y_T_%H")}', exist_ok=True)
         plt.savefig(f'{save_path}test_{datetime.now().strftime("%m-%d-%Y_T_%H")}/Confusion_Matrix_epoch_{datetime.now().strftime("%H-%S")}.png')
         self.build_histogram(angular_differences=angular_differences, len_test_dataset=len(test_loader.dataset), save_path=save_path)
+        self.test_embeddings_visualizer(model=model, test_loader=test_loader, device=device, save_path=save_path)
