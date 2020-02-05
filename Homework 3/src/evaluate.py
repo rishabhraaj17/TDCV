@@ -7,6 +7,7 @@ from sklearn.metrics import confusion_matrix
 import matplotlib.pyplot as plt
 import numpy as np
 from datetime import datetime
+from tqdm import tqdm
 
 from utils.data_utils import del_theta_quaternion
 from utils.vis_utils import plot_confusion_matrix
@@ -33,7 +34,7 @@ class Evaluator(object):
                 image, label, pose = image.to(device), label.to(device), pose.to(device)
                 val_descriptor = model(image)
 
-                prediction_distance, prediction_idx = nearest_neighbours.kneighbors(val_descriptor.numpy(), self.k_neighbour_count)
+                prediction_distance, prediction_idx = nearest_neighbours.kneighbors(val_descriptor.clone().detach().cpu().numpy(), self.k_neighbour_count)
                 prediction_label = int(np.round(knn_dataset_label[prediction_idx[0][0]]))
                 label = label.int().item()
                 y_pred.append(prediction_label)
@@ -41,7 +42,7 @@ class Evaluator(object):
                 if prediction_label == label:
                     test_accuracy += 1
                     angular_difference = del_theta_quaternion(knn_dataset_pose[prediction_idx[0][0]],
-                                                              pose.numpy())
+                                                              pose.cpu().numpy())
                     angular_differences.append(angular_difference)
 
         test_accuracy /= len(test_loader.dataset)
@@ -87,14 +88,14 @@ class Evaluator(object):
         tensorboard_labels = []
         tensorboard_images = torch.zeros(size=(0, 3, 64, 64))
         with torch.no_grad():
-            for batch, data in enumerate(test_loader):
+            for batch, data in tqdm(enumerate(test_loader)):
                 image, label, pose = data[0].permute(dims=[0, 3, 1, 2]).float(), data[1].float(), torch.tensor(data[2:]).float()
                 image, label, pose = image.to(device), label.to(device), pose.to(device)
                 descriptor = model(image)
-                knn_dataset[batch, :] = np.append(descriptor.numpy()[0, :], np.append(label.numpy(), pose.numpy()))
-                test_embeddings = np.vstack((test_embeddings, descriptor.numpy()))
+                knn_dataset[batch, :] = np.append(descriptor.clone().detach().cpu().numpy()[0, :], np.append(label.cpu().numpy(), pose.cpu().numpy()))
+                test_embeddings = np.vstack((test_embeddings, descriptor.clone().detach().cpu().numpy()))
                 tensorboard_labels.append(label.int().item())
-                tensorboard_image = torch.from_numpy(image.numpy().transpose((0, 2, 3, 1)) * self.dataset_dev + self.dataset_mean).float().permute(0, 3, 1, 2)
+                tensorboard_image = torch.from_numpy(image.cpu().numpy().transpose((0, 2, 3, 1)) * self.dataset_dev + self.dataset_mean).float().permute(0, 3, 1, 2)
                 tensorboard_images = torch.cat((tensorboard_images, tensorboard_image))
 
         if self.writer is not None:
@@ -129,4 +130,5 @@ class Evaluator(object):
         os.makedirs(f'{save_path}test_{datetime.now().strftime("%m-%d-%Y_T_%H")}', exist_ok=True)
         plt.savefig(f'{save_path}test_{datetime.now().strftime("%m-%d-%Y_T_%H")}/Confusion_Matrix_epoch_{datetime.now().strftime("%H-%S")}.png')
         self.build_histogram(angular_differences=angular_differences, len_test_dataset=len(test_loader.dataset), save_path=save_path)
+        print('Creating test embeddings for visualization')
         self.test_embeddings_visualizer(model=model, test_loader=test_loader, device=device, save_path=save_path)

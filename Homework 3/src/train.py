@@ -70,7 +70,7 @@ class Solver(object):
                 val_descriptor = model(image)
 
                 # TODO: verify
-                prediction_distance, prediction_idx = nearest_neighbours.kneighbors(val_descriptor.numpy(), self.k_neighbour_count)
+                prediction_distance, prediction_idx = nearest_neighbours.kneighbors(val_descriptor.clone().detach().cpu().numpy(), self.k_neighbour_count)
                 prediction_label = int(np.round(knn_dataset_label[prediction_idx[0][0]]))
                 label = label.int().item()
                 y_pred.append(prediction_label)
@@ -78,7 +78,7 @@ class Solver(object):
                 if prediction_label == label:
                     val_accuracy += 1
                     angular_difference = del_theta_quaternion(knn_dataset_pose[prediction_idx[0][0]],
-                                                              pose.numpy())
+                                                              pose.cpu().numpy())
                     angular_differences.append(angular_difference)
 
         val_accuracy /= len(val_loader.dataset)
@@ -99,10 +99,10 @@ class Solver(object):
                 image, label, pose = data[0].permute(dims=[0, 3, 1, 2]).float(), data[1].float(), torch.tensor(data[2:]).float()
                 image, label, pose = image.to(device), label.to(device), pose.to(device)
                 descriptor = model(image)
-                knn_dataset[batch, :] = np.append(descriptor.numpy()[0, :], np.append(label.numpy(), pose.numpy()))
-                template_embeddings = np.vstack((template_embeddings, descriptor.numpy()))
+                knn_dataset[batch, :] = np.append(descriptor.clone().detach().cpu().numpy()[0, :], np.append(label.cpu().numpy(), pose.cpu().numpy()))
+                template_embeddings = np.vstack((template_embeddings, descriptor.clone().detach().cpu().numpy()))
                 tensorboard_labels.append(label.int().item())
-                tensorboard_image = torch.from_numpy(image.numpy().transpose((0, 2, 3, 1)) * self.dataset_dev + self.dataset_mean).float().permute(0, 3, 1, 2)
+                tensorboard_image = torch.from_numpy(image.cpu().numpy().transpose((0, 2, 3, 1)) * self.dataset_dev + self.dataset_mean).float().permute(0, 3, 1, 2)
                 tensorboard_images = torch.cat((tensorboard_images, tensorboard_image))
 
         if self.writer is not None:
